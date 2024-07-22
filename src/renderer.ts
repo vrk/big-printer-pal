@@ -32,7 +32,7 @@ console.log(
   '👋 This message is being logged by "renderer.ts", included via Vite'
 );
 
-import { Canvas, Group, Rect, Shadow, util, Point, FabricImage } from "fabric"; // browser
+import { Canvas, Group,iMatrix, Rect, Shadow, util, Point, FabricImage } from "fabric"; // browser
 
 const canvas = new Canvas("html-canvas", {
   controlsAboveOverlay: true
@@ -54,28 +54,53 @@ function getPPIRatio() {
 
 const overallContainer = document.getElementById("fabric-canvas-container");
 
+function getDocStrokeWidth() {
+  return 4 * getPPIRatio();
+}
+
 const doc = new Rect({
   fill: "white",
   width: 8.5 * ppi,
   height: 11 * ppi,
 
   stroke: "#4B624C",
-  strokeWidth: 4 * getPPIRatio(),
+  strokeWidth: getDocStrokeWidth(),
   selectable: false,
   hasControls: false,
   hoverCursor: 'default'
 });
+// const doc = new Group([innerDoc],
+//   {
+//   selectable: false,
+//   hasControls: false,
+//   hoverCursor: 'default'
+//   }
+// );
 
+canvas.add(doc);
+canvas.centerObject(doc);
+canvas.clipPath = doc;
 setCanvasDimensions();
 // canvas.setZoom(0.75);
-canvas.add(doc);
-canvas.clipPath = doc;
 
 window.addEventListener("resize", function () {
   setCanvasDimensions();
 });
 
+
+function setCenterFromObject(obj: Rect) {
+  const objCenter = obj.getCenterPoint();
+  const viewportTransform = canvas.viewportTransform;
+  if (canvas.width === undefined || canvas.height === undefined || !viewportTransform) return;
+  viewportTransform[4] = canvas.width / 2 - objCenter.x * viewportTransform[0];
+  viewportTransform[5] = canvas.height / 2 - objCenter.y * viewportTransform[3];
+  canvas.setViewportTransform(viewportTransform);
+  canvas.renderAll();
+}
+
 function setCanvasDimensions() {
+  console.log('set canvas dim');
+  const oldTransform = canvas.viewportTransform;
   canvas.setDimensions({
     width: overallContainer.offsetWidth,
     height: overallContainer.offsetHeight,
@@ -94,9 +119,24 @@ function setCanvasDimensions() {
   //   },
   //   { backstoreOnly: true }
   // );
-  canvas.setZoom(1 / getPPIRatio());
+  const center = canvas.getCenterPoint();
+  let scale = util.findScaleToFit(doc, canvas) * 0.7;
+  const strokeWidth = Math.round(4 / scale);
+  doc.strokeWidth = strokeWidth;
+
+  // HACK: TODO: This is done so that zoom level is preserved on resize. Proper
+  // fix would be to call a special init method for first time canvas dimension setting,
+  // and then have a different method for window resizes.
+  if (canvas.getZoom() !== 1) {
+    scale = canvas.getZoom();
+  }
+  // END HACK
+
+  canvas.zoomToPoint(center, scale);
+  setCenterFromObject(doc);
   // canvas.centerObject(doc);
-  canvas.viewportCenterObject(doc);
+  // canvas.viewportCenterObject(doc);
+  canvas.renderAll();
 }
 
 let altKeyPressed = false;
@@ -112,6 +152,11 @@ canvas.on("mouse:wheel", function (opt) {
       if (zoom < 0.1) zoom = 0.1;
       const center = canvas.getCenterPoint()
       canvas.zoomToPoint(center, zoom);
+
+      const strokeWidth = Math.round(4 / canvas.getZoom());
+      console.log('hiilloo', strokeWidth, canvas.getZoom());
+      doc.strokeWidth = strokeWidth;
+      canvas.renderAll();
     } else {
       console.log(canvas.viewportTransform)
       // pan up and down
