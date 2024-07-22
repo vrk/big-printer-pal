@@ -78,7 +78,6 @@ doc.hoverCursor = "default";
 setCanvasDimensions();
 // canvas.setZoom(0.75);
 canvas.add(doc);
-canvas.centerObject(doc);
 // canvas.renderAll();
 
 window.addEventListener("resize", function () {
@@ -86,26 +85,27 @@ window.addEventListener("resize", function () {
 });
 
 function setCanvasDimensions() {
-  // canvas.setDimensions({
-  //   width: overallContainer.offsetWidth,
-  //   height: overallContainer.offsetHeight,
-  // });
-  canvas.setDimensions(
-    {
-      width: `${overallContainer.offsetWidth}px`,
-      height: `${overallContainer.offsetHeight}px`,
-    },
-    { cssOnly: true }
-  );
-  canvas.setDimensions(
-    {
-      width: overallContainer.offsetWidth * getPPIRatio(),
-      height: overallContainer.offsetHeight * getPPIRatio(),
-    },
-    { backstoreOnly: true }
-  );
-  // canvas.setZoom(0.75);
-  canvas.centerObject(doc);
+  canvas.setDimensions({
+    width: overallContainer.offsetWidth,
+    height: overallContainer.offsetHeight,
+  });
+  // canvas.setDimensions(
+  //   {
+  //     width: `${overallContainer.offsetWidth}px`,
+  //     height: `${overallContainer.offsetHeight}px`,
+  //   },
+  //   { cssOnly: true }
+  // );
+  // canvas.setDimensions(
+  //   {
+  //     width: overallContainer.offsetWidth * getPPIRatio(),
+  //     height: overallContainer.offsetHeight * getPPIRatio(),
+  //   },
+  //   { backstoreOnly: true }
+  // );
+  canvas.setZoom(1 / getPPIRatio());
+  // canvas.centerObject(doc);
+  canvas.viewportCenterObject(doc);
 }
 
 let altKeyPressed = false;
@@ -126,7 +126,7 @@ canvas.on("mouse:wheel", function (opt) {
       // pan up and down
 
       const vpt = this.viewportTransform;
-      vpt[5] -= delta * getPPIRatio();
+      vpt[5] -= delta;
       canvas.setViewportTransform(vpt);
       enclose(canvas, doc);
     }
@@ -157,14 +157,12 @@ addImageButton.addEventListener('click', async () => {
   //i create an extra var for to change some image properties
   // var img1 = image.set({width:image.width,height:image.height});
   image.set({
-    borderScaleFactor: 3 * getPPIRatio(),
-    cornerSize: 13 * getPPIRatio(),
     transparentCorners: false,
     
   })
 
   canvas.add(image); 
-  canvas.centerObject(image);
+  canvas.viewportCenterObject(image);
   canvas.setActiveObject(image);
    
 })
@@ -311,8 +309,8 @@ function onMouseMove(opt) {
     clientX,
     clientY
   } = getClientPosition(e);
-  T[4] += (clientX - lastPosX) * getPPIRatio();
-  T[5] += (clientY - lastPosY) * getPPIRatio();
+  T[4] += (clientX - lastPosX);
+  T[5] += (clientY - lastPosY);
   canvas.requestRenderAll();
   lastPosX = clientX;
   lastPosY = clientY;
