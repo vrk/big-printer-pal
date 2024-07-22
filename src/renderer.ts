@@ -115,18 +115,19 @@ canvas.on("mouse:wheel", function (opt) {
   requestAnimationFrame(() => {
     const delta = opt.e.deltaY;
     if (altKeyPressed) {
-      let zoom = this.getZoom();
+      let zoom = canvas.getZoom();
       zoom *= 0.999 ** delta;
       if (zoom > 2) zoom = 2;
       if (zoom < 0.1) zoom = 0.1;
-      const center = this.getCenter();
-      this.zoomToPoint(new Point(center.left, center.top), zoom);
+      const center = canvas.getCenterPoint()
+      canvas.zoomToPoint(center, zoom);
     } else {
+      console.log(canvas.viewportTransform)
       // pan up and down
 
       const vpt = this.viewportTransform;
       vpt[5] -= delta * getPPIRatio();
-      this.setViewportTransform(vpt);
+      canvas.setViewportTransform(vpt);
     }
   });
 });
