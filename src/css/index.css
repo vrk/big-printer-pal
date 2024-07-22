@@ -1,0 +1,17 @@
+@import url("fonts.css");
+
+body {
+  background-color: #FBFBEE;
+  font-family: "Nunito";
+  margin: auto;
+  max-width: 38rem;
+  padding: 2rem;
+}
+
+#main-nav {
+  background-color: white;
+  border: 3px solid #4B624C;
+  margin: 18px;
+  padding: 18px 28px;
+  font-size: 32px;;
+}
