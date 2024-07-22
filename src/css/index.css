@@ -1,6 +1,6 @@
 @import url("fonts.css");
 
-html, body {
+html, body, body *{
   box-sizing: border-box;
 }
 
@@ -47,6 +47,18 @@ main {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  align-items: flex-start;
+}
+
+#add-image, #settings {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-family: "Nunito";
+  font-size: 24px;
+  padding: 18px 28px;
+  padding-bottom: 8px;
 }
 
 #add-image {
@@ -54,16 +66,19 @@ main {
   border: 4px solid #FFADB2;
   border-bottom-width: 8px;
   border-radius: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-family: "Nunito";
-  font-size: 24px;
-  padding: 18px 28px;
-  padding-bottom: 8px;
   width: 180px;
 }
 
 #add-image img {
   max-width: 100%;
+}
+
+#settings {
+  width: 180px;
+  margin-bottom: 18px;
+  padding: 0;
+}
+
+#settings img {
+  width: 48px;
 }
