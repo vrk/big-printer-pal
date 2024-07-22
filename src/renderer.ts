@@ -147,6 +147,13 @@ document.addEventListener("keyup", function (event) {
   }
 });
 
+const addImageButton = document.getElementById('add-image');
+addImageButton.addEventListener('click', async () => {
+  console.log('hi');
+  const filePath = await window.electronAPI.openFile()
+  console.log(filePath);
+})
+
 
 
 /******
