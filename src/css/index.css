@@ -3,9 +3,7 @@
 body {
   background-color: #FBFBEE;
   font-family: "Nunito";
-  margin: auto;
-  max-width: 38rem;
-  padding: 2rem;
+  margin: 18px;
 }
 
 #main-nav {
@@ -13,5 +11,14 @@ body {
   border: 3px solid #4B624C;
   margin: 18px;
   padding: 18px 28px;
-  font-size: 32px;;
+  font-size: 32px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+#left-nav {
+  display: flex;
+  flex-direction: row;
+  gap: 36px;
 }
