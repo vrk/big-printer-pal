@@ -32,9 +32,11 @@ console.log(
   '👋 This message is being logged by "renderer.ts", included via Vite'
 );
 
-import { Canvas, Rect, Shadow, util, Point, FabricImage } from "fabric"; // browser
+import { Canvas, Group, Rect, Shadow, util, Point, FabricImage } from "fabric"; // browser
 
-const canvas = new Canvas("html-canvas",);
+const canvas = new Canvas("html-canvas", {
+  controlsAboveOverlay: true
+});
 const CANVAS_DEFAULT_PPI = 72; // TODO: Kinda wrong I think but we'll keep this value for now
 
 const DEFAULT_PPI = 300;
@@ -57,28 +59,17 @@ const doc = new Rect({
   width: 8.5 * ppi,
   height: 11 * ppi,
 
-  // width: 100,
-  // height: 100,
   stroke: "#4B624C",
-  strokeWidth: 2 * getPPIRatio(),
-  /* x offset | y offset | blur | spread | <color> */
-  // shadow: new Shadow("0 4px 4px 0 rgba(0, 0, 0, 0.25")
-  shadow: new Shadow({
-    color: "rgba(0, 0, 0, 0.25)",
-    blur: 0.05 * ppi,
-    offsetY: 0.05 * ppi,
-    offsetX: 0,
-  }),
+  strokeWidth: 4 * getPPIRatio(),
+  selectable: false,
+  hasControls: false,
+  hoverCursor: 'default'
 });
-
-doc.set("selectable", false);
-doc.set("hasControls", false);
-doc.hoverCursor = "default";
 
 setCanvasDimensions();
 // canvas.setZoom(0.75);
 canvas.add(doc);
-// canvas.renderAll();
+canvas.clipPath = doc;
 
 window.addEventListener("resize", function () {
   setCanvasDimensions();
@@ -158,12 +149,13 @@ addImageButton.addEventListener('click', async () => {
   // var img1 = image.set({width:image.width,height:image.height});
   image.set({
     transparentCorners: false,
-    
+    selectable: true,
   })
-
   canvas.add(image); 
   canvas.viewportCenterObject(image);
   canvas.setActiveObject(image);
+  canvas.bringObjectToFront(image);
+  // canvas.bringObjectToFront(docOutline);
    
 })
 
@@ -274,7 +266,8 @@ function getClientPosition(e) {
 function onMouseDown(opt) {
   // Ignore clicks on doc or objects
   if (opt.target !== undefined) {
-    return;
+    console.log('nup')
+    return false;
   }
 
   canvas.setCursor('grabbing');
