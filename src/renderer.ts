@@ -32,7 +32,7 @@ console.log(
   '👋 This message is being logged by "renderer.ts", included via Vite'
 );
 
-import { Canvas, Rect, Shadow, util, Point } from "fabric"; // browser
+import { Canvas, Rect, Shadow, util, Point, FabricImage } from "fabric"; // browser
 
 const canvas = new Canvas("html-canvas",);
 const CANVAS_DEFAULT_PPI = 72; // TODO: Kinda wrong I think but we'll keep this value for now
@@ -150,8 +150,23 @@ document.addEventListener("keyup", function (event) {
 const addImageButton = document.getElementById('add-image');
 addImageButton.addEventListener('click', async () => {
   console.log('hi');
-  const filePath = await window.electronAPI.openFile()
-  console.log(filePath);
+  const base64 = await window.electronAPI.openFile()
+  console.log(base64);
+  const url = `data:image/jpg;base64,${base64}`
+  const image = await FabricImage.fromURL(url);
+  //i create an extra var for to change some image properties
+  // var img1 = image.set({width:image.width,height:image.height});
+  image.set({
+    borderScaleFactor: 3 * getPPIRatio(),
+    cornerSize: 13 * getPPIRatio(),
+    transparentCorners: false,
+    
+  })
+
+  canvas.add(image); 
+  canvas.centerObject(image);
+  canvas.setActiveObject(image);
+   
 })
 
 

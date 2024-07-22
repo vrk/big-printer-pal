@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Menu, dialog, ipcMain } from 'electron';
 import path from 'path';
+import fs from 'fs';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -171,10 +172,18 @@ app.whenReady().then(() => {
 
 
 async function handleFileOpen () {
-  const { canceled, filePaths } = await dialog.showOpenDialog({})
-  if (!canceled) {
-    return filePaths[0]
+  const result = await dialog.showOpenDialog({
+    properties: ["openFile"],
+    filters: [{ name: "Images", extensions: ["png","jpg","jpeg"] }]
+  });
+
+  const { canceled, filePaths } = result;
+  if (canceled) {
+    return;
   }
+  const fileData = await fs.promises.readFile(filePaths[0])
+  const base64 = fileData.toString('base64');
+  return base64;
 }
 
 
