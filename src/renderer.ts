@@ -11,6 +11,8 @@ import {
   FabricObject,
   FabricImage,
   ImageFormat,
+  TPointerEventInfo,
+  TPointerEvent,
 } from "fabric";
 import { changeDpiDataUrl } from "changedpi";
 
@@ -25,7 +27,7 @@ const DEFAULT_PPI = 300;
 const DEFAULT_WIDTH_IN_INCHES = 8.5;
 const DEFAULT_HEIGHT_IN_INCHES = 11;
 const DEFAULT_DOC_BORDER_SIZE_IN_PIXELS = 4;
-const BACKGROUND_RECT_ID = '__background-id__';
+const BACKGROUND_RECT_ID = "__background-id__";
 
 let ppi = DEFAULT_PPI;
 let docWidth = DEFAULT_WIDTH_IN_INCHES * ppi;
@@ -120,17 +122,16 @@ function setCanvasDimensions() {
 
 function redoClone(toClone: Canvas) {
   const canvas = toClone.cloneWithoutData();
-  const json = toClone.toObject(['id']);
+  const json = toClone.toObject(["id"]);
   return canvas.loadFromJSON(json);
 }
 
 const printButton = document.getElementById("download-to-print");
 printButton.addEventListener("click", async () => {
-
   // Clone canvas and remove background rect.
   const clonedCanvas = await redoClone(canvas);
   const objects = clonedCanvas.getObjects();
-  const object = objects.find((obj) => { 
+  const object = objects.find((obj) => {
     if (obj.id === BACKGROUND_RECT_ID) {
       return obj;
     }
@@ -150,26 +151,26 @@ printButton.addEventListener("click", async () => {
     top,
     multiplier: 1,
   };
-  console.log('data url start', performance.now());
+  console.log("data url start", performance.now());
   const dataUrl = clonedCanvas.toDataURL(options);
-  console.log('data url finished', performance.now());
+  console.log("data url finished", performance.now());
   const dataUrlAdjustedDPI = changeDpiDataUrl(dataUrl, ppi);
-  console.log('change dpi finished', performance.now());
+  console.log("change dpi finished", performance.now());
   // downloadFile(dataUrlAdjustedDPI, "saved.png");
   await window.electronAPI.downloadFile(dataUrlAdjustedDPI);
 });
 
 function downloadFile(dataUrl: string, filename: string) {
-  console.log('start create a element', performance.now());
+  console.log("start create a element", performance.now());
   const anchorEl = document.createElement("a");
   anchorEl.href = dataUrl;
   anchorEl.download = filename;
-  console.log('element download created', performance.now());
+  console.log("element download created", performance.now());
   // document.body.appendChild(anchorEl); // required for firefox
   anchorEl.click();
-  console.log('element download clicked', performance.now());
+  console.log("element download clicked", performance.now());
   anchorEl.remove();
-  console.log('element download removed', performance.now());
+  console.log("element download removed", performance.now());
 }
 
 let altKeyPressed = false;
@@ -216,7 +217,10 @@ document.addEventListener("keyup", function (event) {
     altKeyPressed = false;
   } else if (event.key === "Backspace" || event.key === "Delete") {
     const active = canvas.getActiveObject();
-    if (!active) {
+    console.log("get active elemnt", document.activeElement);
+    // TODO: Kind of a hack to prevent deletions when editing the sidebar settings
+    if (!active || document.activeElement.nodeName === "INPUT") {
+      console.log("bye");
       return;
     }
     canvas.remove(active);
@@ -310,7 +314,7 @@ function getClientPosition(e) {
   };
 }
 
-function onMouseDown(opt) {
+function onMouseDown(opt: TPointerEventInfo) {
   // Ignore clicks on doc or objects
   if (opt.target !== undefined) {
     console.log("nup");
@@ -347,9 +351,118 @@ function onMouseMove(opt) {
   enclose(canvas, doc);
 }
 
-function onMouseUp(opt) {
-  const { x, y } = opt.absolutePointer;
-  canvas.setViewportTransform(canvas.viewportTransform);
+const objectWidthInput = document.getElementById(
+  "input-object-width"
+) as HTMLInputElement;
+const objectHeightInput = document.getElementById(
+  "input-object-height"
+) as HTMLInputElement;
+const objectXInput = document.getElementById(
+  "input-object-x"
+) as HTMLInputElement;
+const objectYInput = document.getElementById(
+  "input-object-y"
+) as HTMLInputElement;
+function onMouseUp(opt: TPointerEventInfo) {
   isDragging = false;
-  canvas.selection = true;
+  console.log(opt.target);
+  if (opt.target !== undefined && opt.target !== doc && opt.target.selectable) {
+    const object = opt.target;
+
+    // Set initial values
+    objectWidthInput.value = getScaledWidthInInches(object);
+    objectHeightInput.value = getScaledHeightInInches(object);
+    objectXInput.value = getObjectXInInches(object);
+    objectYInput.value = getObjectYInInches(object);
+
+    // Add event listeners for inputs
+    objectWidthInput.addEventListener("input", (e) => {
+      setScaledWidth(object, e.currentTarget.value);
+    });
+    objectHeightInput.addEventListener("input", (e) => {
+      setScaledHeight(object, e.currentTarget.value);
+    });
+    objectXInput.addEventListener("input", (e) => {
+      setObjectX(object, e.currentTarget.value);
+    });
+  } else {
+  }
+}
+
+function setScaledWidth(
+  object: FabricObject,
+  newWidthInput: string
+) {
+  try {
+    const value = parseFloat(newWidthInput) * ppi;
+    if (value) {
+      object.scaleToWidth(value);
+      objectHeightInput.value = getScaledHeightInInches(object);
+      canvas.requestRenderAll();
+    } else {
+      throw new Error(`invalid value ${value}`);
+    }
+  } catch (e) {
+    console.log(e);
+    objectWidthInput.value = getScaledWidthInInches(object);
+  }
+}
+
+function setScaledHeight(
+  object: FabricObject,
+  newHeightInput: string
+) {
+  try {
+    const value = parseFloat(newHeightInput) * ppi;
+    if (value) {
+      object.scaleToHeight(value);
+      objectWidthInput.value = getScaledWidthInInches(object)
+      canvas.requestRenderAll();
+    } else {
+      throw new Error(`invalid value ${value}`);
+    }
+  } catch (e) {
+    console.log(e);
+    objectHeightInput.value = getScaledHeightInInches(object);
+  }
+}
+
+function setObjectX(
+  object: FabricObject,
+  newXInput: string
+) {
+  const topLeftOrigin = doc.aCoords.tl;
+  try {
+    const value = parseFloat(newXInput) * ppi + topLeftOrigin.x;
+    if (value) {
+      console.log("value is", value);
+      object.setX(value);
+      canvas.requestRenderAll();
+    }
+  } catch (e) {
+    console.log(e);
+    objectXInput.value = getObjectXInInches(object);
+  }
+}
+
+function getScaledWidthInInches(object: FabricObject) {
+  return (object.getScaledWidth() / ppi).toFixed(3);
+}
+
+function getScaledHeightInInches(object: FabricObject) {
+  return (object.getScaledHeight() / ppi).toFixed(3);
+}
+
+function getObjectXInInches(object: FabricObject) {
+  const topLeftOrigin = doc.aCoords.tl;
+  const objectTopLeft = object.aCoords.tl;
+  const xInPixels = objectTopLeft.x - topLeftOrigin.x;
+  return (xInPixels / ppi).toFixed(3);
+}
+
+function getObjectYInInches(object: FabricObject) {
+  const topLeftOrigin = doc.aCoords.tl;
+  const objectTopLeft = object.aCoords.tl;
+  const yInPixels = objectTopLeft.y - topLeftOrigin.y;
+  return (yInPixels / ppi).toFixed(3);
 }
