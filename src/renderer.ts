@@ -51,7 +51,7 @@ const doc = new Rect({
   height: docHeight,
 
   stroke: "#4B624C",
-  strokeWidth: getDocStrokeWidth(),
+  strokeWidth: 0,
   selectable: false,
   hasControls: false,
   hoverCursor: "default",
@@ -104,8 +104,8 @@ function setCanvasDimensions() {
   // );
   const center = canvas.getCenterPoint();
   let scale = util.findScaleToFit(doc, canvas) * 0.9; // TODO: fix eyeballing
-  const strokeWidth = Math.round(DEFAULT_DOC_BORDER_SIZE_IN_PIXELS / scale);
-  doc.strokeWidth = strokeWidth;
+  // const strokeWidth = Math.round(DEFAULT_DOC_BORDER_SIZE_IN_PIXELS / scale);
+  // doc.strokeWidth = strokeWidth;
 
   // HACK: TODO: This is done so that zoom level is preserved on resize. Proper
   // fix would be to call a special init method for first time canvas dimension setting,
@@ -188,10 +188,10 @@ canvas.on("mouse:wheel", function (opt) {
       canvas.zoomToPoint(center, zoom);
 
       // TODO: why doesn't this work better than it does
-      const strokeWidth = Math.round(
-        DEFAULT_DOC_BORDER_SIZE_IN_PIXELS / canvas.getZoom()
-      );
-      doc.strokeWidth = strokeWidth;
+      // const strokeWidth = Math.round(
+      //   DEFAULT_DOC_BORDER_SIZE_IN_PIXELS / canvas.getZoom()
+      // );
+      // doc.strokeWidth = strokeWidth;
       canvas.renderAll();
     } else {
       console.log(canvas.viewportTransform);
@@ -385,6 +385,9 @@ function onMouseUp(opt: TPointerEventInfo) {
     objectXInput.addEventListener("input", (e) => {
       setObjectX(object, e.currentTarget.value);
     });
+    objectYInput.addEventListener("input", (e) => {
+      setObjectY(object, e.currentTarget.value);
+    });
   } else {
   }
 }
@@ -442,6 +445,24 @@ function setObjectX(
   } catch (e) {
     console.log(e);
     objectXInput.value = getObjectXInInches(object);
+  }
+}
+
+function setObjectY(
+  object: FabricObject,
+  newYInput: string
+) {
+  const topLeftOrigin = doc.aCoords.tl;
+  try {
+    const value = parseFloat(newYInput) * ppi + topLeftOrigin.y;
+    if (value) {
+      console.log("value is", value);
+      object.setY(value);
+      canvas.requestRenderAll();
+    }
+  } catch (e) {
+    console.log(e);
+    objectYInput.value = getObjectYInInches(object);
   }
 }
 
