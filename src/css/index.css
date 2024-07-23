@@ -131,11 +131,6 @@ button.nav-button:hover {
   bottom: 36px;
 }
 
-#selected-object-preview {
-  max-width: 100%;
-  max-height: 250px;
-  object-fit: contain;
-}
 
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
@@ -172,6 +167,8 @@ input[type=number] {
 
 #selected-object-preview {
   display: block;
+  width: 161px;
+  object-fit: contain;
   margin-left: auto;
   margin-right: auto;
   margin-bottom: 18px;
