@@ -42,6 +42,7 @@ const CANVAS_DEFAULT_PPI = 72; // TODO: Kinda wrong I think but we'll keep this 
 const DEFAULT_PPI = 300;
 const DEFAULT_WIDTH_IN_INCHES = 8.5;
 const DEFAULT_HEIGHT_IN_INCHES = 11;
+const DEFAULT_DOC_BORDER_SIZE_IN_PIXELS = 4;
 
 let ppi = DEFAULT_PPI;
 let docWidth = DEFAULT_WIDTH_IN_INCHES * ppi;
@@ -81,7 +82,6 @@ canvas.add(doc);
 canvas.centerObject(doc);
 canvas.clipPath = doc;
 setCanvasDimensions();
-// canvas.setZoom(0.75);
 
 window.addEventListener("resize", function () {
   setCanvasDimensions();
@@ -120,8 +120,8 @@ function setCanvasDimensions() {
   //   { backstoreOnly: true }
   // );
   const center = canvas.getCenterPoint();
-  let scale = util.findScaleToFit(doc, canvas) * 0.7;
-  const strokeWidth = Math.round(4 / scale);
+  let scale = util.findScaleToFit(doc, canvas) * 0.7; // TODO: fix eyeballing
+  const strokeWidth = Math.round(DEFAULT_DOC_BORDER_SIZE_IN_PIXELS / scale);
   doc.strokeWidth = strokeWidth;
 
   // HACK: TODO: This is done so that zoom level is preserved on resize. Proper
@@ -153,8 +153,8 @@ canvas.on("mouse:wheel", function (opt) {
       const center = canvas.getCenterPoint()
       canvas.zoomToPoint(center, zoom);
 
-      const strokeWidth = Math.round(4 / canvas.getZoom());
-      console.log('hiilloo', strokeWidth, canvas.getZoom());
+      // TODO: why doesn't this work better than it does
+      const strokeWidth = Math.round(DEFAULT_DOC_BORDER_SIZE_IN_PIXELS / canvas.getZoom());
       doc.strokeWidth = strokeWidth;
       canvas.renderAll();
     } else {
@@ -200,8 +200,6 @@ addImageButton.addEventListener('click', async () => {
   canvas.viewportCenterObject(image);
   canvas.setActiveObject(image);
   canvas.bringObjectToFront(image);
-  // canvas.bringObjectToFront(docOutline);
-   
 })
 
 
@@ -213,7 +211,6 @@ addImageButton.addEventListener('click', async () => {
  */
 
 
-
 // create Fabric canvas
 canvas.on('mouse:down', onMouseDown);
 canvas.on('mouse:move', onMouseMove);
@@ -223,29 +220,6 @@ canvas.on('mouse:up', onMouseUp);
 let isDragging = false;
 let lastPosX: any = null;
 let lastPosY: any = null;
-let zoomStartScale;
-
-
-// function onMouseWheel(opt) {
-//   const {
-//     e
-//   } = opt;
-//   enclose(canvas, doc);
-//   e.preventDefault();
-//   e.stopPropagation();
-// }
-
-// function zoomDelta(canvas, delta, x, y, maxZoom = 5, minZoom = 0.2) {
-//   let zoom = canvas.getZoom();
-//   zoom *= 0.999 ** delta;
-//   zoom = Math.min(zoom, maxZoom);
-//   zoom = Math.max(zoom, minZoom);
-//   const point = {
-//     x,
-//     y
-//   };
-//   canvas.zoomToPoint(point, zoom);
-// }
 
 function enclose(canvas: Canvas, object: Rect) {
   const {
