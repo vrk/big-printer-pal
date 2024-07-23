@@ -26,7 +26,7 @@
         <div id="settings-box" hidden>
           <div id="object-properties">
             <img src="" id="selected-object-preview" height="100">
-            <div id="property-grid">
+            <div class="property-grid">
                 <span>width:</span>
                 <input type="number" id="input-object-width" min="0" max="99">
                 <span>height:</span>
@@ -36,14 +36,27 @@
                 <span>y:</span>
                 <input type="number" id="input-object-y"  min="-15" max="25">
             </div>
-
           </div>
+        </div>
+        <div id="paper-settings-box">
+          <h1>paper size</h1>
+            <div class="property-grid">
+              <span>width (in):</span>
+              <span><input type="number" id="input-paper-width" min="0.1" max="99"></span>
+              <span>height (in):</span>
+              <span>
+                <input type="number" id="input-paper-height" min="0.1" max="99">
+              </span>
+              <span>pixels per inch:</span>
+              <span>
+                <input type="number" id="input-paper-dpi" min="1" max="1000">
+              </span>
+            </div>
         </div>
         <div id="settings">
           <img src="/src/assets/images/ruler.png">
           settings
         </div>
-      </div>
     </main>
     <script type="module" src="/src/renderer.ts"></script>
   </body>

@@ -331,7 +331,6 @@ function onMouseDown(opt: TPointerEventInfo) {
   isDragging = true;
   lastPosX = clientX;
   lastPosY = clientY;
-  canvas.selection = false;
   canvas.discardActiveObject();
 }
 
@@ -376,6 +375,8 @@ function onMouseUp(opt: TPointerEventInfo) {
   if (!settingsBox.hidden && (
     opt.target === undefined || opt.target === doc || !opt.target.selectable)) {
     disableSettingsBoxFor(opt.target);
+  } else if (canvas.getActiveObject()) {
+    enableSettingsBoxFor(canvas.getActiveObject())
   }
 }
 
@@ -407,6 +408,16 @@ function createImagePreviewSrc(object: FabricObject) {
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(object.toCanvasElement(), 0, 0, offscreenCanvas.width, offscreenCanvas.height);
     return offscreenCanvas.toDataURL();
+}
+
+const paperSettingsBox = document.getElementById('paper-settings-box');
+function enablePaperSettingsBox(object: FabricObject) {
+  paperSettingsBox.hidden = false;
+  // canvas.getActiveObject()
+}
+
+function disablePaperSettingsBox(object: FabricObject) {
+  paperSettingsBox.hidden = true;
 }
 
 function enableSettingsBoxFor(object: FabricObject) {
