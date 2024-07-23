@@ -132,17 +132,25 @@ button.nav-button {
   padding: 2px 18px
 }
 
+#settings {
+  bottom: 36px;
+  border-radius: 100px;
+  cursor: pointer;
+}
+
 button.nav-button:hover {
   background-color: #FFF6B2;
+}
+
+#settings:hover {
+  transform: translateY(2px);
+
 }
 
 #add-image {
   top: 36px;
 }
 
-#settings {
-  bottom: 36px;
-}
 
 
 input::-webkit-outer-spin-button,

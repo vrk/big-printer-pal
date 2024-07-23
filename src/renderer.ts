@@ -126,6 +126,16 @@ function redoClone(toClone: Canvas) {
   return canvas.loadFromJSON(json);
 }
 
+const paperSettingsButton = document.getElementById("settings");
+paperSettingsButton.addEventListener("click", () => {
+  if (paperSettingsBox.hidden) {
+    disableSettingsBoxFor(canvas.getActiveObject());
+    enablePaperSettingsBox();
+  } else {
+    disablePaperSettingsBox();
+  }
+});
+
 const printButton = document.getElementById("download-to-print");
 printButton.addEventListener("click", async () => {
   // Clone canvas and remove background rect.
@@ -219,7 +229,10 @@ document.addEventListener("keyup", function (event) {
     const activeObjects = canvas.getActiveObjects();
     console.log("get active elemnt", document.activeElement);
     // TODO: Kind of a hack to prevent deletions when editing the sidebar settings
-    if (activeObjects.length === 0 || document.activeElement.nodeName === "INPUT") {
+    if (
+      activeObjects.length === 0 ||
+      document.activeElement.nodeName === "INPUT"
+    ) {
       console.log("bye");
       return;
     }
@@ -319,6 +332,7 @@ function getClientPosition(e) {
 }
 
 function onMouseDown(opt: TPointerEventInfo) {
+  disablePaperSettingsBox();
   // Ignore clicks on doc or objects
   if (opt.target !== undefined) {
     if (opt.target.selectable) {
@@ -376,25 +390,27 @@ let activeInputController = new AbortController();
 
 function onMouseUp(opt: TPointerEventInfo) {
   isDragging = false;
-  if (!settingsBox.hidden && (
-    opt.target === undefined || opt.target === doc || !opt.target.selectable)) {
+  if (
+    !settingsBox.hidden &&
+    (opt.target === undefined || opt.target === doc || !opt.target.selectable)
+  ) {
     disableSettingsBoxFor(opt.target);
   } else if (canvas.getActiveObject()) {
-    enableSettingsBoxFor(canvas.getActiveObject())
+    enableSettingsBoxFor(canvas.getActiveObject());
   }
 }
 
-canvas.on('object:added', ({ target }) => {
+canvas.on("object:added", ({ target }) => {
   enableSettingsBoxFor(target);
-})
+});
 
-canvas.on('object:removed', ({target}) => {
+canvas.on("object:removed", ({ target }) => {
   disableSettingsBoxFor(target);
-})
+});
 
-canvas.on('object:moving', ({target}) => {
-  matchInputsToObjectValues(target)
-})
+canvas.on("object:moving", ({ target }) => {
+  matchInputsToObjectValues(target);
+});
 
 function matchInputsToObjectValues(object: FabricObject) {
   objectWidthInput.value = getScaledWidthInInches(object);
@@ -404,68 +420,143 @@ function matchInputsToObjectValues(object: FabricObject) {
 }
 
 function createImagePreviewSrc(object: FabricObject) {
-    const offscreenCanvas = document.createElement('canvas');
-    const ctx = offscreenCanvas.getContext('2d');
-    offscreenCanvas.width = 200 / object.height * object.width;
-    offscreenCanvas.height = 200;
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(object.toCanvasElement(), 0, 0, offscreenCanvas.width, offscreenCanvas.height);
-    return offscreenCanvas.toDataURL();
+  const offscreenCanvas = document.createElement("canvas");
+  const ctx = offscreenCanvas.getContext("2d");
+  offscreenCanvas.width = (200 / object.height) * object.width;
+  offscreenCanvas.height = 200;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(
+    object.toCanvasElement(),
+    0,
+    0,
+    offscreenCanvas.width,
+    offscreenCanvas.height
+  );
+  return offscreenCanvas.toDataURL();
 }
 
-const paperSettingsBox = document.getElementById('paper-settings-box');
-function enablePaperSettingsBox(object: FabricObject) {
+const paperSettingsBox = document.getElementById("paper-settings-box");
+const paperWidthInput = document.getElementById(
+  "input-paper-width"
+) as HTMLInputElement;
+const paperHeightInput = document.getElementById(
+  "input-paper-height"
+) as HTMLInputElement;
+const paperPpiInput = document.getElementById(
+  "input-paper-ppi"
+) as HTMLInputElement;
+
+setInitialPaperValues();
+
+function setInitialPaperValues() {
+  paperPpiInput.value = `${ppi}` ;
+  paperHeightInput.value = `${doc.height / ppi}`
+  paperWidthInput.value = `${doc.width / ppi}`;
+}
+
+paperWidthInput.addEventListener("input", () => {
+  try {
+    const value = parseFloat(paperWidthInput.value) * ppi;
+    if (value) {
+      doc.width = value;
+      canvas.requestRenderAll();
+    } else {
+      throw new Error(`invalid value ${value}`);
+    }
+  } catch (e) {
+    console.log(e);
+    objectWidthInput.value = DEFAULT_WIDTH_IN_INCHES + "";
+  }
+});
+
+paperHeightInput.addEventListener("input", () => {
+  try {
+    const value = parseFloat(paperHeightInput.value) * ppi;
+    if (value) {
+      doc.height = value;
+      canvas.requestRenderAll();
+    } else {
+      throw new Error(`invalid value ${value}`);
+    }
+  } catch (e) {
+    console.log(e);
+    paperHeightInput.value = DEFAULT_HEIGHT_IN_INCHES + "";
+  }
+});
+
+paperPpiInput.addEventListener("input", () => {
+  try {
+    const value = parseFloat(paperPpiInput.value);
+    if (value) {
+      const oldDocWidthInInches = doc.width / ppi;
+      const oldDocHeightInInches = doc.height / ppi;
+      ppi = value;
+      doc.width = oldDocWidthInInches * ppi;
+      doc.height = oldDocHeightInInches * ppi;
+      canvas.requestRenderAll();
+    } else {
+      throw new Error(`invalid value ${value}`);
+    }
+  } catch (e) {
+    console.log(e);
+    paperHeightInput.value = DEFAULT_PPI + "";
+  }
+});
+
+function enablePaperSettingsBox() {
   paperSettingsBox.hidden = false;
-  // canvas.getActiveObject()
+  // canvas.getActiveObject();
 }
 
-function disablePaperSettingsBox(object: FabricObject) {
+function disablePaperSettingsBox() {
   paperSettingsBox.hidden = true;
 }
 
 function enableSettingsBoxFor(object: FabricObject) {
-    // Set initial values
-    matchInputsToObjectValues(object);
-    activeInputController = new AbortController();
-    const { signal } = activeInputController;
+  disablePaperSettingsBox();
+  // Set initial values
+  matchInputsToObjectValues(object);
+  activeInputController = new AbortController();
+  const { signal } = activeInputController;
 
-    imagePreview.src = createImagePreviewSrc(object);
+  imagePreview.src = createImagePreviewSrc(object);
 
-    // Add event listeners for inputs
-    objectWidthInput.addEventListener(
-      "input",
-      (e) => {
-        setScaledWidth(object, e.currentTarget.value);
-      },
-      { signal }
-    );
-    objectHeightInput.addEventListener(
-      "input",
-      (e) => {
-        setScaledHeight(object, e.currentTarget.value);
-      },
-      { signal }
-    );
-    objectXInput.addEventListener(
-      "input",
-      (e) => {
-        setObjectX(object, e.currentTarget.value);
-      },
-      { signal }
-    );
-    objectYInput.addEventListener(
-      "input",
-      (e) => {
-        setObjectY(object, e.currentTarget.value);
-      },
-      { signal }
-    );
-    settingsBox.hidden = false;
+  // Add event listeners for inputs
+  objectWidthInput.addEventListener(
+    "input",
+    (e) => {
+      setScaledWidth(object, e.currentTarget.value);
+    },
+    { signal }
+  );
+  objectHeightInput.addEventListener(
+    "input",
+    (e) => {
+      setScaledHeight(object, e.currentTarget.value);
+    },
+    { signal }
+  );
+  objectXInput.addEventListener(
+    "input",
+    (e) => {
+      setObjectX(object, e.currentTarget.value);
+    },
+    { signal }
+  );
+  objectYInput.addEventListener(
+    "input",
+    (e) => {
+      setObjectY(object, e.currentTarget.value);
+    },
+    { signal }
+  );
+  settingsBox.hidden = false;
 }
 
 function disableSettingsBoxFor(object: FabricObject) {
   activeInputController.abort();
+  canvas.discardActiveObject();
   settingsBox.hidden = true;
 }
 
