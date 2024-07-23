@@ -317,7 +317,9 @@ function getClientPosition(e) {
 function onMouseDown(opt: TPointerEventInfo) {
   // Ignore clicks on doc or objects
   if (opt.target !== undefined) {
-    console.log("nup");
+    if (opt.target.selectable) {
+      enableSettingsBoxFor(opt.target);
+    }
     return false;
   }
 
@@ -351,6 +353,7 @@ function onMouseMove(opt) {
   enclose(canvas, doc);
 }
 
+const settingsBox = document.getElementById("settings-box");
 const objectWidthInput = document.getElementById(
   "input-object-width"
 ) as HTMLInputElement;
@@ -363,39 +366,81 @@ const objectXInput = document.getElementById(
 const objectYInput = document.getElementById(
   "input-object-y"
 ) as HTMLInputElement;
+
+// TODO: make this a little more elegant
+let activeInputController = new AbortController();
+
 function onMouseUp(opt: TPointerEventInfo) {
   isDragging = false;
-  console.log(opt.target);
-  if (opt.target !== undefined && opt.target !== doc && opt.target.selectable) {
-    const object = opt.target;
-
-    // Set initial values
-    objectWidthInput.value = getScaledWidthInInches(object);
-    objectHeightInput.value = getScaledHeightInInches(object);
-    objectXInput.value = getObjectXInInches(object);
-    objectYInput.value = getObjectYInInches(object);
-
-    // Add event listeners for inputs
-    objectWidthInput.addEventListener("input", (e) => {
-      setScaledWidth(object, e.currentTarget.value);
-    });
-    objectHeightInput.addEventListener("input", (e) => {
-      setScaledHeight(object, e.currentTarget.value);
-    });
-    objectXInput.addEventListener("input", (e) => {
-      setObjectX(object, e.currentTarget.value);
-    });
-    objectYInput.addEventListener("input", (e) => {
-      setObjectY(object, e.currentTarget.value);
-    });
-  } else {
+  if (!settingsBox.hidden && (
+    opt.target === undefined || opt.target === doc || !opt.target.selectable)) {
+    disableSettingsBoxFor(opt.target);
   }
 }
 
-function setScaledWidth(
-  object: FabricObject,
-  newWidthInput: string
-) {
+canvas.on('object:added', ({ target }) => {
+  enableSettingsBoxFor(target);
+})
+
+canvas.on('object:removed', ({target}) => {
+  disableSettingsBoxFor(target);
+})
+
+canvas.on('object:moving', ({target}) => {
+  matchInputsToObjectValues(target)
+})
+
+function matchInputsToObjectValues(object: FabricObject) {
+  objectWidthInput.value = getScaledWidthInInches(object);
+  objectHeightInput.value = getScaledHeightInInches(object);
+  objectXInput.value = getObjectXInInches(object);
+  objectYInput.value = getObjectYInInches(object);
+}
+
+function enableSettingsBoxFor(object: FabricObject) {
+    // Set initial values
+    matchInputsToObjectValues(object);
+    activeInputController = new AbortController();
+    const { signal } = activeInputController;
+
+    // Add event listeners for inputs
+    objectWidthInput.addEventListener(
+      "input",
+      (e) => {
+        setScaledWidth(object, e.currentTarget.value);
+      },
+      { signal }
+    );
+    objectHeightInput.addEventListener(
+      "input",
+      (e) => {
+        setScaledHeight(object, e.currentTarget.value);
+      },
+      { signal }
+    );
+    objectXInput.addEventListener(
+      "input",
+      (e) => {
+        setObjectX(object, e.currentTarget.value);
+      },
+      { signal }
+    );
+    objectYInput.addEventListener(
+      "input",
+      (e) => {
+        setObjectY(object, e.currentTarget.value);
+      },
+      { signal }
+    );
+    settingsBox.hidden = false;
+}
+
+function disableSettingsBoxFor(object: FabricObject) {
+  activeInputController.abort();
+  settingsBox.hidden = true;
+}
+
+function setScaledWidth(object: FabricObject, newWidthInput: string) {
   try {
     const value = parseFloat(newWidthInput) * ppi;
     if (value) {
@@ -411,15 +456,12 @@ function setScaledWidth(
   }
 }
 
-function setScaledHeight(
-  object: FabricObject,
-  newHeightInput: string
-) {
+function setScaledHeight(object: FabricObject, newHeightInput: string) {
   try {
     const value = parseFloat(newHeightInput) * ppi;
     if (value) {
       object.scaleToHeight(value);
-      objectWidthInput.value = getScaledWidthInInches(object)
+      objectWidthInput.value = getScaledWidthInInches(object);
       canvas.requestRenderAll();
     } else {
       throw new Error(`invalid value ${value}`);
@@ -430,10 +472,7 @@ function setScaledHeight(
   }
 }
 
-function setObjectX(
-  object: FabricObject,
-  newXInput: string
-) {
+function setObjectX(object: FabricObject, newXInput: string) {
   const topLeftOrigin = doc.aCoords.tl;
   try {
     const value = parseFloat(newXInput) * ppi + topLeftOrigin.x;
@@ -448,10 +487,7 @@ function setObjectX(
   }
 }
 
-function setObjectY(
-  object: FabricObject,
-  newYInput: string
-) {
+function setObjectY(object: FabricObject, newYInput: string) {
   const topLeftOrigin = doc.aCoords.tl;
   try {
     const value = parseFloat(newYInput) * ppi + topLeftOrigin.y;
