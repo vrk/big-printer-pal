@@ -216,14 +216,18 @@ document.addEventListener("keyup", function (event) {
   if (event.key === "Alt" || event.key === "Meta") {
     altKeyPressed = false;
   } else if (event.key === "Backspace" || event.key === "Delete") {
-    const active = canvas.getActiveObject();
+    const activeObjects = canvas.getActiveObjects();
     console.log("get active elemnt", document.activeElement);
     // TODO: Kind of a hack to prevent deletions when editing the sidebar settings
-    if (!active || document.activeElement.nodeName === "INPUT") {
+    if (activeObjects.length === 0 || document.activeElement.nodeName === "INPUT") {
       console.log("bye");
       return;
     }
-    canvas.remove(active);
+    for (const object of activeObjects) {
+      canvas.remove(object);
+    }
+    canvas.discardActiveObject();
+    canvas.requestRenderAll();
   }
 });
 
