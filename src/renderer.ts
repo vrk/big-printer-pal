@@ -155,7 +155,8 @@ printButton.addEventListener("click", async () => {
   console.log('data url finished', performance.now());
   const dataUrlAdjustedDPI = changeDpiDataUrl(dataUrl, ppi);
   console.log('change dpi finished', performance.now());
-  downloadFile(dataUrlAdjustedDPI, "saved.png");
+  // downloadFile(dataUrlAdjustedDPI, "saved.png");
+  await window.electronAPI.downloadFile(dataUrlAdjustedDPI);
 });
 
 function downloadFile(dataUrl: string, filename: string) {
@@ -226,8 +227,7 @@ const addImageButton = document.getElementById("add-image");
 addImageButton.addEventListener("click", async () => {
   console.log("hi");
   const base64 = await window.electronAPI.openFile();
-  console.log(base64);
-  const url = `data:image/jpg;base64,${base64}`;
+  const url = `data:image/png;base64,${base64}`;
   const image = await FabricImage.fromURL(url);
   image.set({
     transparentCorners: false,
