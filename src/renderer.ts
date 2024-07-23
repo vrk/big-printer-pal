@@ -1,4 +1,3 @@
-import { rotationWithSnapping } from "fabric/dist/src/controls";
 import "./css/index.css";
 import {
   Canvas,
@@ -9,8 +8,11 @@ import {
   Shadow,
   util,
   Point,
+  FabricObject,
   FabricImage,
+  ImageFormat,
 } from "fabric";
+import { changeDpiDataUrl } from "changedpi";
 
 // TODO: Check out https://codepen.io/janih/pen/EjaNXP for snap to grid
 
@@ -23,6 +25,7 @@ const DEFAULT_PPI = 300;
 const DEFAULT_WIDTH_IN_INCHES = 8.5;
 const DEFAULT_HEIGHT_IN_INCHES = 11;
 const DEFAULT_DOC_BORDER_SIZE_IN_PIXELS = 4;
+const BACKGROUND_RECT_ID = '__background-id__';
 
 let ppi = DEFAULT_PPI;
 let docWidth = DEFAULT_WIDTH_IN_INCHES * ppi;
@@ -40,6 +43,7 @@ function getDocStrokeWidth() {
 }
 
 const doc = new Rect({
+  id: BACKGROUND_RECT_ID,
   fill: "white",
   width: docWidth,
   height: docHeight,
@@ -114,6 +118,59 @@ function setCanvasDimensions() {
   canvas.renderAll();
 }
 
+function redoClone(toClone: Canvas) {
+  const canvas = toClone.cloneWithoutData();
+  const json = toClone.toObject(['id']);
+  return canvas.loadFromJSON(json);
+}
+
+const printButton = document.getElementById("download-to-print");
+printButton.addEventListener("click", async () => {
+
+  // Clone canvas and remove background rect.
+  const clonedCanvas = await redoClone(canvas);
+  const objects = clonedCanvas.getObjects();
+  const object = objects.find((obj) => { 
+    if (obj.id === BACKGROUND_RECT_ID) {
+      return obj;
+    }
+  });
+  clonedCanvas.remove(object);
+
+  clonedCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+  const { left, top, width, height } = doc;
+  const format: ImageFormat = "png";
+  const options = {
+    name: "New Image",
+    format,
+    quality: 1,
+    width,
+    height,
+    left,
+    top,
+    multiplier: 1,
+  };
+  console.log('data url start', performance.now());
+  const dataUrl = clonedCanvas.toDataURL(options);
+  console.log('data url finished', performance.now());
+  const dataUrlAdjustedDPI = changeDpiDataUrl(dataUrl, ppi);
+  console.log('change dpi finished', performance.now());
+  downloadFile(dataUrlAdjustedDPI, "saved.png");
+});
+
+function downloadFile(dataUrl: string, filename: string) {
+  console.log('start create a element', performance.now());
+  const anchorEl = document.createElement("a");
+  anchorEl.href = dataUrl;
+  anchorEl.download = filename;
+  console.log('element download created', performance.now());
+  // document.body.appendChild(anchorEl); // required for firefox
+  anchorEl.click();
+  console.log('element download clicked', performance.now());
+  anchorEl.remove();
+  console.log('element download removed', performance.now());
+}
+
 let altKeyPressed = false;
 canvas.on("mouse:wheel", function (opt) {
   opt.e.preventDefault();
@@ -180,7 +237,7 @@ addImageButton.addEventListener("click", async () => {
     mt: false, // middle top disable
     mb: false, // midle bottom
     ml: false, // middle left
-    mr: false, // I think you get it
+    mr: false,
   });
   image.snapAngle = 5;
   canvas.add(image);

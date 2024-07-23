@@ -22,6 +22,7 @@ body {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  align-items: center;
 }
 
 #left-nav {
@@ -86,4 +87,20 @@ body {
 
 #html-canvas {
   filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.1));
+
+}
+
+button.nav-button {
+  background: none;
+  border: none;
+  font-family: 'Nunito';
+  font-size: 32px;
+  cursor: pointer;
+  display: block;
+  border-radius: 100px;
+  padding: 2px 18px
+}
+
+button.nav-button:hover {
+  background-color: #FFF6B2;
 }
