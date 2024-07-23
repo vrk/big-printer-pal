@@ -354,6 +354,7 @@ function onMouseMove(opt) {
 }
 
 const settingsBox = document.getElementById("settings-box");
+const imagePreview = document.getElementById("selected-object-preview");
 const objectWidthInput = document.getElementById(
   "input-object-width"
 ) as HTMLInputElement;
@@ -397,11 +398,24 @@ function matchInputsToObjectValues(object: FabricObject) {
   objectYInput.value = getObjectYInInches(object);
 }
 
+function createImagePreviewSrc(object: FabricObject) {
+    const offscreenCanvas = document.createElement('canvas');
+    const ctx = offscreenCanvas.getContext('2d');
+    offscreenCanvas.width = 200 / object.height * object.width;
+    offscreenCanvas.height = 200;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(object.toCanvasElement(), 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+    return offscreenCanvas.toDataURL();
+}
+
 function enableSettingsBoxFor(object: FabricObject) {
     // Set initial values
     matchInputsToObjectValues(object);
     activeInputController = new AbortController();
     const { signal } = activeInputController;
+
+    imagePreview.src = createImagePreviewSrc(object);
 
     // Add event listeners for inputs
     objectWidthInput.addEventListener(
