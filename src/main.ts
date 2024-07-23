@@ -166,7 +166,7 @@ async function handleFileOpen() {
   return base64;
 }
 
-async function handleFileDownload(_, dataUrl: string) {
+async function handleFileDownload(_: any, dataUrl: string) {
   var options = {
     title: "Save file",
     defaultPath: "printable.png",

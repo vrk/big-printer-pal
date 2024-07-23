@@ -101,7 +101,7 @@ function setCanvasDimensions() {
   //   { backstoreOnly: true }
   // );
   const center = canvas.getCenterPoint();
-  let scale = util.findScaleToFit(doc, canvas) * 0.7; // TODO: fix eyeballing
+  let scale = util.findScaleToFit(doc, canvas) * 0.9; // TODO: fix eyeballing
   const strokeWidth = Math.round(DEFAULT_DOC_BORDER_SIZE_IN_PIXELS / scale);
   doc.strokeWidth = strokeWidth;
 
