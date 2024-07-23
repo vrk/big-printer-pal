@@ -1,44 +1,24 @@
-/**
- * This file will automatically be loaded by vite and run in the "renderer" context.
- * To learn more about the differences between the "main" and the "renderer" context in
- * Electron, visit:
- *
- * https://electronjs.org/docs/tutorial/application-architecture#main-and-renderer-processes
- *
- * By default, Node.js integration in this file is disabled. When enabling Node.js integration
- * in a renderer process, please be aware of potential security implications. You can read
- * more about security risks here:
- *
- * https://electronjs.org/docs/tutorial/security
- *
- * To enable Node.js integration in this file, open up `main.ts` and enable the `nodeIntegration`
- * flag:
- *
- * ```
- *  // Create the browser window.
- *  mainWindow = new BrowserWindow({
- *    width: 800,
- *    height: 600,
- *    webPreferences: {
- *      nodeIntegration: true
- *    }
- *  });
- * ```
- */
-
+import { rotationWithSnapping } from "fabric/dist/src/controls";
 import "./css/index.css";
+import {
+  Canvas,
+  Line,
+  Group,
+  iMatrix,
+  Rect,
+  Shadow,
+  util,
+  Point,
+  FabricImage,
+} from "fabric";
 
-console.log(
-  '👋 This message is being logged by "renderer.ts", included via Vite'
-);
-
-import { Canvas, Group,iMatrix, Rect, Shadow, util, Point, FabricImage } from "fabric"; // browser
+// TODO: Check out https://codepen.io/janih/pen/EjaNXP for snap to grid
 
 const canvas = new Canvas("html-canvas", {
-  controlsAboveOverlay: true
+  controlsAboveOverlay: true,
 });
-const CANVAS_DEFAULT_PPI = 72; // TODO: Kinda wrong I think but we'll keep this value for now
 
+const CANVAS_DEFAULT_PPI = 72; // TODO: Kinda wrong I think but we'll keep this value for now
 const DEFAULT_PPI = 300;
 const DEFAULT_WIDTH_IN_INCHES = 8.5;
 const DEFAULT_HEIGHT_IN_INCHES = 11;
@@ -61,22 +41,15 @@ function getDocStrokeWidth() {
 
 const doc = new Rect({
   fill: "white",
-  width: 8.5 * ppi,
-  height: 11 * ppi,
+  width: docWidth,
+  height: docHeight,
 
   stroke: "#4B624C",
   strokeWidth: getDocStrokeWidth(),
   selectable: false,
   hasControls: false,
-  hoverCursor: 'default'
+  hoverCursor: "default",
 });
-// const doc = new Group([innerDoc],
-//   {
-//   selectable: false,
-//   hasControls: false,
-//   hoverCursor: 'default'
-//   }
-// );
 
 canvas.add(doc);
 canvas.centerObject(doc);
@@ -87,11 +60,16 @@ window.addEventListener("resize", function () {
   setCanvasDimensions();
 });
 
-
+// From vue-fabric-editor
 function setCenterFromObject(obj: Rect) {
   const objCenter = obj.getCenterPoint();
   const viewportTransform = canvas.viewportTransform;
-  if (canvas.width === undefined || canvas.height === undefined || !viewportTransform) return;
+  if (
+    canvas.width === undefined ||
+    canvas.height === undefined ||
+    !viewportTransform
+  )
+    return;
   viewportTransform[4] = canvas.width / 2 - objCenter.x * viewportTransform[0];
   viewportTransform[5] = canvas.height / 2 - objCenter.y * viewportTransform[3];
   canvas.setViewportTransform(viewportTransform);
@@ -99,8 +77,7 @@ function setCenterFromObject(obj: Rect) {
 }
 
 function setCanvasDimensions() {
-  console.log('set canvas dim');
-  const oldTransform = canvas.viewportTransform;
+  console.log("set canvas dim");
   canvas.setDimensions({
     width: overallContainer.offsetWidth,
     height: overallContainer.offsetHeight,
@@ -134,8 +111,6 @@ function setCanvasDimensions() {
 
   canvas.zoomToPoint(center, scale);
   setCenterFromObject(doc);
-  // canvas.centerObject(doc);
-  // canvas.viewportCenterObject(doc);
   canvas.renderAll();
 }
 
@@ -150,15 +125,17 @@ canvas.on("mouse:wheel", function (opt) {
       zoom *= 0.999 ** delta;
       if (zoom > 2) zoom = 2;
       if (zoom < 0.1) zoom = 0.1;
-      const center = canvas.getCenterPoint()
+      const center = canvas.getCenterPoint();
       canvas.zoomToPoint(center, zoom);
 
       // TODO: why doesn't this work better than it does
-      const strokeWidth = Math.round(DEFAULT_DOC_BORDER_SIZE_IN_PIXELS / canvas.getZoom());
+      const strokeWidth = Math.round(
+        DEFAULT_DOC_BORDER_SIZE_IN_PIXELS / canvas.getZoom()
+      );
       doc.strokeWidth = strokeWidth;
       canvas.renderAll();
     } else {
-      console.log(canvas.viewportTransform)
+      console.log(canvas.viewportTransform);
       // pan up and down
 
       const vpt = this.viewportTransform;
@@ -171,51 +148,57 @@ canvas.on("mouse:wheel", function (opt) {
 
 document.addEventListener("keydown", function (event) {
   console.log(event);
-  if (event.key == 'Alt' || event.key === "Meta") {
+  if (event.key == "Alt" || event.key === "Meta") {
     altKeyPressed = true;
   }
 });
 
 document.addEventListener("keyup", function (event) {
-  console.log(event);
-  if (event.key == 'Alt' || event.key === "Meta") {
+  if (event.key === "Alt" || event.key === "Meta") {
     altKeyPressed = false;
+  } else if (event.key === "Backspace" || event.key === "Delete") {
+    const active = canvas.getActiveObject();
+    if (!active) {
+      return;
+    }
+    canvas.remove(active);
   }
 });
 
-const addImageButton = document.getElementById('add-image');
-addImageButton.addEventListener('click', async () => {
-  console.log('hi');
-  const base64 = await window.electronAPI.openFile()
+const addImageButton = document.getElementById("add-image");
+addImageButton.addEventListener("click", async () => {
+  console.log("hi");
+  const base64 = await window.electronAPI.openFile();
   console.log(base64);
-  const url = `data:image/jpg;base64,${base64}`
+  const url = `data:image/jpg;base64,${base64}`;
   const image = await FabricImage.fromURL(url);
-  //i create an extra var for to change some image properties
-  // var img1 = image.set({width:image.width,height:image.height});
   image.set({
     transparentCorners: false,
     selectable: true,
-  })
-  canvas.add(image); 
+  });
+  image.setControlsVisibility({
+    mt: false, // middle top disable
+    mb: false, // midle bottom
+    ml: false, // middle left
+    mr: false, // I think you get it
+  });
+  image.snapAngle = 5;
+  canvas.add(image);
   canvas.viewportCenterObject(image);
   canvas.setActiveObject(image);
   canvas.bringObjectToFront(image);
-})
-
-
+});
 
 /******
- * 
- * 
+ *
+ *
  * from https://github.com/fabricjs/fabric.js/discussions/7052
  */
 
-
 // create Fabric canvas
-canvas.on('mouse:down', onMouseDown);
-canvas.on('mouse:move', onMouseMove);
-canvas.on('mouse:up', onMouseUp);
-
+canvas.on("mouse:down", onMouseDown);
+canvas.on("mouse:move", onMouseMove);
+canvas.on("mouse:up", onMouseUp);
 
 let isDragging = false;
 let lastPosX: any = null;
@@ -224,33 +207,24 @@ let lastPosY: any = null;
 function enclose(canvas: Canvas, object: Rect) {
   const {
     br: brRaw, // bottom right
-    tl: tlRaw // top left
+    tl: tlRaw, // top left
   } = object.aCoords;
   const T = canvas.viewportTransform;
   const br = brRaw.transform(T);
   const tl = tlRaw.transform(T);
-  const {
-    x: left,
-    y: top
-  } = tl;
-  const {
-    x: right,
-    y: bottom
-  } = br;
-  const {
-    width,
-    height
-  } = canvas;
+  const { x: left, y: top } = tl;
+  const { x: right, y: bottom } = br;
+  const { width, height } = canvas;
   // const width = overallContainer.offsetWidth;
   // const height = overallContainer.offsetHeight;
-  // calculate how far to translate to line up the edge of the object with  
-  // the edge of the canvas                                                 
+  // calculate how far to translate to line up the edge of the object with
+  // the edge of the canvas
   const dLeft = Math.abs(right - width);
   const dRight = Math.abs(left);
   const dUp = Math.abs(bottom - height);
   const dDown = Math.abs(top);
-  // if the object is larger than the canvas, clamp translation such that   
-  // we don't push the opposite boundary past the edge                      
+  // if the object is larger than the canvas, clamp translation such that
+  // we don't push the opposite boundary past the edge
   const maxDx = Math.min(dLeft, dRight);
   const maxDy = Math.min(dUp, dDown);
   const leftIsOver = left < 0;
@@ -272,32 +246,24 @@ function enclose(canvas: Canvas, object: Rect) {
 
 function getClientPosition(e) {
   const positionSource = e.touches ? e.touches[0] : e;
-  const {
-    clientX,
-    clientY
-  } = positionSource;
+  const { clientX, clientY } = positionSource;
   return {
     clientX,
-    clientY
+    clientY,
   };
 }
 
 function onMouseDown(opt) {
   // Ignore clicks on doc or objects
   if (opt.target !== undefined) {
-    console.log('nup')
+    console.log("nup");
     return false;
   }
 
-  canvas.setCursor('grabbing');
+  canvas.setCursor("grabbing");
 
-  const {
-    e
-  } = opt;
-  const {
-    clientX,
-    clientY
-  } = getClientPosition(e);
+  const { e } = opt;
+  const { clientX, clientY } = getClientPosition(e);
 
   isDragging = true;
   lastPosX = clientX;
@@ -309,20 +275,15 @@ function onMouseDown(opt) {
 function onMouseMove(opt) {
   if (!isDragging) {
     if (opt.target === undefined) {
-      canvas.setCursor('grab');
+      canvas.setCursor("grab");
     }
     return;
   }
-  const {
-    e
-  } = opt;
+  const { e } = opt;
   const T = canvas.viewportTransform;
-  const {
-    clientX,
-    clientY
-  } = getClientPosition(e);
-  T[4] += (clientX - lastPosX);
-  T[5] += (clientY - lastPosY);
+  const { clientX, clientY } = getClientPosition(e);
+  T[4] += clientX - lastPosX;
+  T[5] += clientY - lastPosY;
   canvas.requestRenderAll();
   lastPosX = clientX;
   lastPosY = clientY;
@@ -330,10 +291,7 @@ function onMouseMove(opt) {
 }
 
 function onMouseUp(opt) {
-  const {
-    x,
-    y
-  } = opt.absolutePointer;
+  const { x, y } = opt.absolutePointer;
   canvas.setViewportTransform(canvas.viewportTransform);
   isDragging = false;
   canvas.selection = true;
