@@ -39,7 +39,7 @@ let canvas = new Canvas("html-canvas", {
   renderOnAddRemove: false,
 });
 let documentRectangle: FabricObject;
-let ppi = DEFAULT_PPI;
+let ppi: number;
 
 let openedFilename: string | null = null;
 
@@ -52,18 +52,19 @@ async function main() {
   } else {
     createNewCanvas();
   }
-  initializeCanvas();
+  setCanvasDimensionsToWindowSize();
+  zoomToFitDocument();
+  setInitialPaperValues();
+  addCanvasEventListeners();
 
+  window.addEventListener("resize", onWindowResize);
   document.addEventListener("paste", onPaste);
   window.electronAPI.onLocalCopy(handleLocalCopy);
 
   canvas.requestRenderAll();
 }
 
-function initializeCanvas() {
-  setCanvasDimensions();
-  setInitialPaperValues();
-
+function addCanvasEventListeners() {
   canvas.on("mouse:wheel", onMouseWheel);
   canvas.on("mouse:down", onMouseDown);
   canvas.on("mouse:move", onMouseMove);
@@ -74,7 +75,7 @@ function initializeCanvas() {
   canvas.on("object:moving", onObjectMoving);
 }
 
-function teardownCanvas() {
+function removeCanvasEventListeners() {
   canvas.off("mouse:wheel", onMouseWheel);
   canvas.off("mouse:down", onMouseDown);
   canvas.off("mouse:move", onMouseMove);
@@ -92,7 +93,7 @@ main();
 
 // TODO: fix types
 async function loadSnapshotData(loadedData: any) {
-  teardownCanvas();
+  removeCanvasEventListeners();
 
   ppi = loadedData.snapshot.ppi;
   canvas = await canvas.loadFromJSON(loadedData.snapshot.canvasData);
@@ -109,10 +110,11 @@ async function loadSnapshotData(loadedData: any) {
   openedFilename = loadedData.openedFileName;
   console.log(canvas.getObjects());
 
-  initializeCanvas();
+  addCanvasEventListeners();
 }
 
 async function createNewCanvas() {
+  ppi = DEFAULT_PPI;
   documentRectangle = new Rect({
     id: BACKGROUND_RECT_ID,
     fill: "white",
@@ -151,12 +153,9 @@ function onDocEdit() {
   // });
 }
 
-window.addEventListener("resize", function () {
-  setCanvasDimensions();
-});
 
 // From vue-fabric-editor
-function setCenterFromObject(obj: Rect) {
+function setCenterFromObject(obj: FabricObject) {
   const objCenter = obj.getCenterPoint();
   const viewportTransform = canvas.viewportTransform;
   if (
@@ -171,42 +170,26 @@ function setCenterFromObject(obj: Rect) {
   canvas.renderAll();
 }
 
-function setCanvasDimensions() {
+function setCanvasDimensionsToWindowSize() {
   console.log("set canvas dim");
   canvas.setDimensions({
     width: overallContainer.offsetWidth,
     height: overallContainer.offsetHeight,
   });
-  // canvas.setDimensions(
-  //   {
-  //     width: `${overallContainer.offsetWidth}px`,
-  //     height: `${overallContainer.offsetHeight}px`,
-  //   },
-  //   { cssOnly: true }
-  // );
-  // canvas.setDimensions(
-  //   {
-  //     width: overallContainer.offsetWidth * getPPIRatio(),
-  //     height: overallContainer.offsetHeight * getPPIRatio(),
-  //   },
-  //   { backstoreOnly: true }
-  // );
+  canvas.requestRenderAll();
+}
+
+function zoomToFitDocument() {
   const center = canvas.getCenterPoint();
   let scale = util.findScaleToFit(documentRectangle, canvas) * 0.9; // TODO: fix eyeballing
-  // const strokeWidth = Math.round(DEFAULT_DOC_BORDER_SIZE_IN_PIXELS / scale);
-  // doc.strokeWidth = strokeWidth;
-
-  // HACK: TODO: This is done so that zoom level is preserved on resize. Proper
-  // fix would be to call a special init method for first time canvas dimension setting,
-  // and then have a different method for window resizes.
-  if (canvas.getZoom() !== 1) {
-    scale = canvas.getZoom();
-  }
-  // END HACK
-
   canvas.zoomToPoint(center, scale);
   setCenterFromObject(documentRectangle);
   canvas.requestRenderAll();
+}
+
+function onWindowResize() {
+  setCanvasDimensionsToWindowSize();
+  zoomToFitDocument();
 }
 
 function redoClone(toClone: Canvas) {
@@ -250,12 +233,20 @@ loadButton.addEventListener("click", async () => {
   if (!result) {
     return; // canceled
   }
-  loadSnapshotData(result);
-
+  await loadSnapshotData(result);
+  setInitialPaperValues();
+  zoomToFitDocument();
+  canvas.requestRenderAll();
 });
 
 const newButton = document.getElementById("new-canvas");
-newButton.addEventListener("click", async () => {});
+newButton.addEventListener("click", async () => {
+  await window.electronAPI.startNewUnsavedFile();
+  removeCanvasEventListeners();
+  createNewCanvas();
+  addCanvasEventListeners();
+  canvas.requestRenderAll();
+});
 
 const printButton = document.getElementById("download-to-print");
 printButton.addEventListener("click", async () => {
