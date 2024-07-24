@@ -10,102 +10,109 @@ if (require("electron-squirrel-startup")) {
 
 const isMac = process.platform === "darwin";
 
-const template = [
-  ...(isMac
-    ? [
+function buildMenu(mainWindow) {
+  const template = [
+    ...(isMac
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: "about" },
+              { type: "separator" },
+              { role: "services" },
+              { type: "separator" },
+              { role: "hide" },
+              { role: "hideOthers" },
+              { role: "unhide" },
+              { type: "separator" },
+              { role: "quit" },
+            ],
+          },
+        ]
+      : []),
+    // { role: 'fileMenu' }
+    {
+      label: "File",
+      submenu: [isMac ? { role: "close" } : { role: "quit" }],
+    },
+    // { role: 'editMenu' }
+    {
+      label: "Edit",
+      submenu: [
+        { role: "undo" },
+        { role: "redo" },
+        { type: "separator" },
+        { role: "cut" },
         {
-          label: app.name,
-          submenu: [
-            { role: "about" },
-            { type: "separator" },
-            { role: "services" },
-            { type: "separator" },
-            { role: "hide" },
-            { role: "hideOthers" },
-            { role: "unhide" },
-            { type: "separator" },
-            { role: "quit" },
-          ],
+          // role: "halp",
+          label: "Copy",
+          accelerator: "CommandOrControl+C",
+          click: () => {
+            console.log("Electron rocks!");
+            mainWindow.webContents.send('system:local-copy');
+          },
         },
-      ]
-    : []),
-  // { role: 'fileMenu' }
-  {
-    label: "File",
-    submenu: [isMac ? { role: "close" } : { role: "quit" }],
-  },
-  // { role: 'editMenu' }
-  {
-    label: "Edit",
-    submenu: [
-      { role: "undo" },
-      { role: "redo" },
-      { type: "separator" },
-      { role: "cut" },
-      { role: "copy" },
-      { role: "paste" },
-      ...(isMac
-        ? [
-            { role: "pasteAndMatchStyle" },
-            { role: "delete" },
-            { role: "selectAll" },
-            { type: "separator" },
-            {
-              label: "Speech",
-              submenu: [{ role: "startSpeaking" }, { role: "stopSpeaking" }],
-            },
-          ]
-        : [{ role: "delete" }, { type: "separator" }, { role: "selectAll" }]),
-    ],
-  },
-  // { role: 'viewMenu' }
-  {
-    label: "View",
-    submenu: [
-      { role: "reload" },
-      { role: "forceReload" },
-      { role: "toggleDevTools" },
-      // { type: 'separator' },
-      // { role: 'resetZoom' },
-      // { role: 'zoomIn' },
-      // { role: 'zoomOut' },
-      { type: "separator" },
-      { role: "togglefullscreen" },
-    ],
-  },
-  // { role: 'windowMenu' }
-  {
-    label: "Window",
-    submenu: [
-      { role: "minimize" },
-      { role: "zoom" },
-      ...(isMac
-        ? [
-            { type: "separator" },
-            { role: "front" },
-            { type: "separator" },
-            { role: "window" },
-          ]
-        : [{ role: "close" }]),
-    ],
-  },
-  {
-    role: "help",
-    submenu: [
-      {
-        label: "Learn More",
-        click: async () => {
-          const { shell } = require("electron");
-          await shell.openExternal("https://electronjs.org");
+        { role: "paste" },
+        ...(isMac
+          ? [
+              { role: "pasteAndMatchStyle" },
+              { role: "delete" },
+              { role: "selectAll" },
+              { type: "separator" },
+              {
+                label: "Speech",
+                submenu: [{ role: "startSpeaking" }, { role: "stopSpeaking" }],
+              },
+            ]
+          : [{ role: "delete" }, { type: "separator" }, { role: "selectAll" }]),
+      ],
+    },
+    // { role: 'viewMenu' }
+    {
+      label: "View",
+      submenu: [
+        { role: "reload" },
+        { role: "forceReload" },
+        { role: "toggleDevTools" },
+        // { type: 'separator' },
+        // { role: 'resetZoom' },
+        // { role: 'zoomIn' },
+        // { role: 'zoomOut' },
+        { type: "separator" },
+        { role: "togglefullscreen" },
+      ],
+    },
+    // { role: 'windowMenu' }
+    {
+      label: "Window",
+      submenu: [
+        { role: "minimize" },
+        { role: "zoom" },
+        ...(isMac
+          ? [
+              { type: "separator" },
+              { role: "front" },
+              { type: "separator" },
+              { role: "window" },
+            ]
+          : [{ role: "close" }]),
+      ],
+    },
+    {
+      role: "help",
+      submenu: [
+        {
+          label: "Learn More",
+          click: async () => {
+            const { shell } = require("electron");
+            await shell.openExternal("https://electronjs.org");
+          },
         },
-      },
-    ],
-  },
-];
-
-const menu = Menu.buildFromTemplate(template);
-Menu.setApplicationMenu(menu);
-const  store = new SimpleElectronStore();
+      ],
+    },
+  ];
+  return template;
+}
 
 const createWindow = () => {
   // Create the browser window.
@@ -116,7 +123,13 @@ const createWindow = () => {
     },
   });
   mainWindow.maximize();
+  const template = buildMenu(mainWindow);
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+
   mainWindow.webContents.on("did-finish-load", () => {
+    // Open the DevTools.
+    mainWindow.webContents.openDevTools();
     mainWindow.show();
   });
 
@@ -128,10 +141,6 @@ const createWindow = () => {
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
     );
   }
-  let webContents = mainWindow.webContents;
-
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
 };
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -142,6 +151,8 @@ app.on("window-all-closed", () => {
     app.quit();
   }
 });
+
+const store = new SimpleElectronStore();
 
 app.whenReady().then(() => {
   ipcMain.handle("dialog:openFile", handleFileOpen);
@@ -183,7 +194,7 @@ async function handleFileOpen() {
 async function handleFileDownload(_: any, dataUrl: string) {
   var options = {
     title: "Save file",
-    defaultPath: "printable.png",
+    defaultPath: "printabl fe.png",
     buttonLabel: "Save",
 
     filters: [
@@ -192,12 +203,12 @@ async function handleFileDownload(_: any, dataUrl: string) {
     ],
   };
   dialog.showSaveDialog(null, options).then(({ filePath }) => {
-    console.log('start', performance.now())
+    console.log("start", performance.now());
     var data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
-    var buf = Buffer.from(data, 'base64');
+    var buf = Buffer.from(data, "base64");
 
     fs.writeFile(filePath, buf, () => {
-      console.log('end', performance.now())
+      console.log("end", performance.now());
     });
   });
 }

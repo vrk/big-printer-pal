@@ -94,6 +94,7 @@ window.electronAPI.loadSnapshot().then(async (snapshot) => {
   setCanvasDimensions();
   setInitialPaperValues();
   document.addEventListener("paste", onPaste);
+  window.electronAPI.onLocalCopy(handleLocalCopy);
 });
 
 let autosaveTimer: NodeJS.Timeout | null = null;
@@ -339,6 +340,11 @@ async function onPaste(e: ClipboardEvent) {
     const objectUrl = URL.createObjectURL(file);
     addImageToCanvas(objectUrl);
   }
+}
+
+function handleLocalCopy() {
+  console.log('plumbed');
+
 }
 
 /******
