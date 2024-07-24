@@ -43,6 +43,14 @@ function buildMenu(mainWindow) {
             onMenuSave(mainWindow)
           }
         },
+        {
+          // role: "halp",
+          label: "Load",
+          accelerator: "CommandOrControl+O",
+          click: () => {
+            onMenuLoad(mainWindow)
+          }
+        },
         isMac ? { role: "close" } : { role: "quit" }
       ],
     },
@@ -196,6 +204,14 @@ async function onMenuSave(mainWindow) {
   mainWindow.webContents.send('system:save-canvas', path.basename(saveFilePath));
 }
 
+async function onMenuLoad(mainWindow) {
+  const loadData = await handleLoadData();
+  if (!loadData) {
+    return;
+  }
+  mainWindow.webContents.send('system:load-canvas', loadData);
+}
+
 async function handleNewFile() {
   store.delete(LAST_SAVED_FILE_PATH_KEY);
   saveFilePath = null;
@@ -237,7 +253,7 @@ async function handleLoadLastSaveIfAny(_: any) {
   return loadSaveFileFromDisk(saveFilePath);
 }
 
-async function handleLoadData(_: any) {
+async function handleLoadData() {
   const result = await dialog.showOpenDialog({
     properties: ["openFile"],
     filters: [{ name: "Documents", extensions: ["json"] }, { name: "All Files", extensions: ["*"] }],

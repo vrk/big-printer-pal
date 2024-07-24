@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveToFile: (jsonObject: Object) => ipcRenderer.invoke('dialog:saveFile', jsonObject),
 
   onLocalCopy: (callback: Function) => ipcRenderer.on('system:local-copy', (_event, value) => callback(value)),
-  onRequestSaveCanvas: (callback: Function) => ipcRenderer.on('system:save-canvas', (_event, value) => callback(value))
+  onRequestSaveCanvas: (callback: Function) => ipcRenderer.on('system:save-canvas', (_event, value) => callback(value)),
+  onRequestLoadCanvas: (callback: Function) => ipcRenderer.on('system:load-canvas', (_event, value) => callback(value))
 })
 

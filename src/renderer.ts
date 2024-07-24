@@ -69,6 +69,7 @@ async function main() {
   document.addEventListener("paste", onPaste);
   window.electronAPI.onLocalCopy(handleLocalCopy);
   window.electronAPI.onRequestSaveCanvas(handleSaveFromMain);
+  window.electronAPI.onRequestLoadCanvas(handleLoadFromMain);
 
   canvas.requestRenderAll();
 }
@@ -513,6 +514,13 @@ async function handleSaveFromMain(fileName) {
     fileNameBox.innerHTML = fileName;
     saveButton.disabled = true;
   }
+}
+
+async function handleLoadFromMain(loadData) {
+  await loadSnapshotData(loadData);
+  setInitialPaperValues();
+  zoomToFitDocument();
+  canvas.requestRenderAll();
 }
 
 /******
