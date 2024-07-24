@@ -24,6 +24,9 @@ let canvas = new Canvas("html-canvas", {
   renderOnAddRemove: false
 });
 
+const worker = new Worker(new URL('./worker.ts', import.meta.url))
+
+
 const CANVAS_DEFAULT_PPI = 72; // TODO: Kinda wrong I think but we'll keep this value for now
 const DEFAULT_PPI = 300;
 const DEFAULT_WIDTH_IN_INCHES = 8.5;
@@ -107,21 +110,23 @@ window.electronAPI.loadSnapshot().then(async (snapshot) => {
 });
 
 let autosaveTimer: NodeJS.Timeout | null = null;
+let idleCallback: number | null = null;
 
 function save() {
   // console.log('SAVIN');
   // clearTimeout(autosaveTimer);
-  // autosaveTimer = setTimeout(function () {
-  //   requestIdleCallback(() => {
-  //     console.log('oop', performance.now());
-  //     const data = {
-  //       ppi,
-  //       canvasData: canvas.toObject(PROPERTIES_TO_INCLUDE),
-  //     };
-  //     console.log('after', performance.now());
-  //     window.electronAPI.saveSnapshot(data);
-  //   })
-  // }, 500);
+  // if (idleCallback !== null) {
+  //   cancelIdleCallback(idleCallback);
+  // }
+  // idleCallback = requestIdleCallback(() => {
+  //   console.log('oop', performance.now());
+  //   const data = {
+  //     ppi,
+  //     canvasData: canvas.toObject(PROPERTIES_TO_INCLUDE),
+  //   };
+  //   console.log('after', performance.now());
+  //   window.electronAPI.saveSnapshot(data);
+  // });
 }
 
 window.addEventListener("resize", function () {
@@ -507,6 +512,7 @@ function onMouseMove(opt) {
   lastPosX = clientX;
   lastPosY = clientY;
   enclose(canvas, doc);
+  save();
 }
 
 const settingsBox = document.getElementById("settings-box");

@@ -3,6 +3,7 @@
   "productName": "big-printer-pal",
   "version": "1.0.0",
   "description": "My Electron application description",
+  "type": "module",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
@@ -28,7 +29,8 @@
     "eslint-plugin-import": "^2.29.1",
     "ts-node": "^10.9.2",
     "typescript": "~4.5.4",
-    "vite": "^5.3.4"
+    "vite": "^5.3.4",
+    "vite-plugin-require": "^1.2.14"
   },
   "keywords": [],
   "author": {
