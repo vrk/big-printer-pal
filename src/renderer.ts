@@ -30,8 +30,8 @@ const DEFAULT_DOC_BORDER_SIZE_IN_PIXELS = 4;
 const BACKGROUND_RECT_ID = "__background-id__";
 
 let ppi = DEFAULT_PPI;
-let docWidth = DEFAULT_WIDTH_IN_INCHES * ppi;
-let docHeight = DEFAULT_HEIGHT_IN_INCHES * ppi;
+const docWidth = DEFAULT_WIDTH_IN_INCHES * ppi;
+const docHeight = DEFAULT_HEIGHT_IN_INCHES * ppi;
 
 function getPPIRatio() {
   return ppi / CANVAS_DEFAULT_PPI;
@@ -42,7 +42,8 @@ const overallContainer = document.getElementById("fabric-canvas-container");
 let doc: FabricObject;
 window.electronAPI.loadSnapshot().then(async (snapshot) => {
   if (snapshot) {
-    canvas = await canvas.loadFromJSON(snapshot);
+    ppi = snapshot.ppi;
+    canvas = await canvas.loadFromJSON(snapshot.canvasData);
     doc = canvas.getObjects().find(obj => obj.id === BACKGROUND_RECT_ID);
     console.log(canvas.getObjects())
   } else {
@@ -73,10 +74,12 @@ window.electronAPI.loadSnapshot().then(async (snapshot) => {
 
   canvas.on("object:removed", ({ target }) => {
     disableSettingsBoxFor(target);
+    save();
   });
 
   canvas.on("object:moving", ({ target }) => {
     matchInputsToObjectValues(target);
+    save();
   });
 
   setCanvasDimensions();
@@ -88,7 +91,11 @@ let autosaveTimer: NodeJS.Timeout | null = null;
 function save() {
   clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(function () {
-    window.electronAPI.saveSnapshot(canvas.toObject(['id', 'selectable', 'hasControls', 'hoverCursor']));
+    const data = {
+      ppi, 
+      canvasData: canvas.toObject(['id', 'selectable', 'hasControls', 'hoverCursor'])
+    }
+    window.electronAPI.saveSnapshot(data);
   }, 500);
 }
 
@@ -476,6 +483,7 @@ paperWidthInput.addEventListener("input", () => {
     const value = parseFloat(paperWidthInput.value) * ppi;
     if (value) {
       doc.width = value;
+      canvas.clipPath = doc;
       canvas.requestRenderAll();
     } else {
       throw new Error(`invalid value ${value}`);
@@ -491,6 +499,7 @@ paperHeightInput.addEventListener("input", () => {
     const value = parseFloat(paperHeightInput.value) * ppi;
     if (value) {
       doc.height = value;
+      canvas.clipPath = doc;
       canvas.requestRenderAll();
     } else {
       throw new Error(`invalid value ${value}`);
@@ -510,6 +519,7 @@ paperPpiInput.addEventListener("input", () => {
       ppi = value;
       doc.width = oldDocWidthInInches * ppi;
       doc.height = oldDocHeightInInches * ppi;
+      canvas.clipPath = doc;
       canvas.requestRenderAll();
     } else {
       throw new Error(`invalid value ${value}`);
