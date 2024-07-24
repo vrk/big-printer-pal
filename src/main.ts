@@ -34,7 +34,17 @@ function buildMenu(mainWindow) {
     // { role: 'fileMenu' }
     {
       label: "File",
-      submenu: [isMac ? { role: "close" } : { role: "quit" }],
+      submenu: [
+        {
+          // role: "halp",
+          label: "Save",
+          accelerator: "CommandOrControl+S",
+          click: () => {
+            onMenuSave(mainWindow)
+          }
+        },
+        isMac ? { role: "close" } : { role: "quit" }
+      ],
     },
     // { role: 'editMenu' }
     {
@@ -173,6 +183,18 @@ app.whenReady().then(() => {
 const SNAPSHOT_KEY = "__snapshot-key__";
 
 let saveFilePath : string | null = null;
+
+async function onMenuSave(mainWindow) {
+  if (!saveFilePath) {
+    const result = await handleNewSaveFile();
+    if (result.canceled) {
+      return;
+    }
+  }
+  console.log(saveFilePath);
+
+  mainWindow.webContents.send('system:save-canvas', path.basename(saveFilePath));
+}
 
 async function handleNewFile() {
   store.delete(LAST_SAVED_FILE_PATH_KEY);

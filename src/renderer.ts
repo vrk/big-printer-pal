@@ -68,6 +68,7 @@ async function main() {
   window.addEventListener("resize", onWindowResize);
   document.addEventListener("paste", onPaste);
   window.electronAPI.onLocalCopy(handleLocalCopy);
+  window.electronAPI.onRequestSaveCanvas(handleSaveFromMain);
 
   canvas.requestRenderAll();
 }
@@ -499,6 +500,19 @@ function handleLocalCopy() {
     activeObject.toObject(PROPERTIES_TO_INCLUDE)
   );
   return navigator.clipboard.writeText(objectAsJson);
+}
+
+async function handleSaveFromMain(fileName) {
+  const data = {
+    ppi,
+    canvasData: canvas.toObject(PROPERTIES_TO_INCLUDE),
+  };
+  const saveResult = await window.electronAPI.saveToFile(data);
+  console.log("save", saveResult ? "succeeded" : "failed");
+  if (saveResult) {
+    fileNameBox.innerHTML = fileName;
+    saveButton.disabled = true;
+  }
 }
 
 /******

@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadLastSaveIfAny: () => ipcRenderer.invoke('dialog:loadLastSaveFile'),
   saveToFile: (jsonObject: Object) => ipcRenderer.invoke('dialog:saveFile', jsonObject),
 
-  onLocalCopy: (callback: Function) => ipcRenderer.on('system:local-copy', (_event, value) => callback(value))
+  onLocalCopy: (callback: Function) => ipcRenderer.on('system:local-copy', (_event, value) => callback(value)),
+  onRequestSaveCanvas: (callback: Function) => ipcRenderer.on('system:save-canvas', (_event, value) => callback(value))
 })
 
