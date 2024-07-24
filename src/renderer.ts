@@ -1,5 +1,6 @@
 import "./css/index.css";
 import {
+  ActiveSelection,
   Canvas,
   Line,
   Group,
@@ -28,6 +29,13 @@ const DEFAULT_WIDTH_IN_INCHES = 8.5;
 const DEFAULT_HEIGHT_IN_INCHES = 11;
 const DEFAULT_DOC_BORDER_SIZE_IN_PIXELS = 4;
 const BACKGROUND_RECT_ID = "__background-id__";
+const PROPERTIES_TO_INCLUDE = [
+  "id",
+  "selectable",
+  "hasControls",
+  "hoverCursor",
+  "transparentCorners",
+];
 
 let ppi = DEFAULT_PPI;
 const docWidth = DEFAULT_WIDTH_IN_INCHES * ppi;
@@ -104,13 +112,7 @@ function save() {
   autosaveTimer = setTimeout(function () {
     const data = {
       ppi,
-      canvasData: canvas.toObject([
-        "id",
-        "selectable",
-        "hasControls",
-        "hoverCursor",
-        "transparentCorners",
-      ]),
+      canvasData: canvas.toObject(PROPERTIES_TO_INCLUDE),
     };
     window.electronAPI.saveSnapshot(data);
   }, 500);
@@ -176,7 +178,7 @@ function setCanvasDimensions() {
 
 function redoClone(toClone: Canvas) {
   const canvas = toClone.cloneWithoutData();
-  const json = toClone.toObject(["id"]);
+  const json = toClone.toObject(PROPERTIES_TO_INCLUDE);
   return canvas.loadFromJSON(json);
 }
 
@@ -304,16 +306,12 @@ addImageButton.addEventListener("click", async () => {
   console.log("hi");
   const base64 = await window.electronAPI.openFile();
   const url = `data:image/png;base64,${base64}`;
+  addImageToCanvas(url);
 });
 
 async function addImageToCanvas(dataUrl) {
   const image = await FabricImage.fromURL(dataUrl);
-  setEditableObjectProperties(image);
-  canvas.add(image);
-  canvas.viewportCenterObject(image);
-  canvas.setActiveObject(image);
-  canvas.bringObjectToFront(image);
-  save();
+  addFabricObjectToCanvas(image);
 }
 
 function setEditableObjectProperties(object: FabricObject) {
@@ -333,18 +331,71 @@ function setEditableObjectProperties(object: FabricObject) {
 async function onPaste(e: ClipboardEvent) {
   e.preventDefault();
   for (const item of e.clipboardData.items) {
-    const file = item.getAsFile();
-    if (!file || !item.type.startsWith('image/')) {
-      continue;
+    console.log(item);
+    if (item.type.startsWith("image/")) {
+      const file = item.getAsFile();
+      if (!file) {
+        continue;
+      }
+      const objectUrl = URL.createObjectURL(file);
+      addImageToCanvas(objectUrl);
+    } else if (item.type.startsWith("text/plain")) {
+      console.log("hi", item);
+      item.getAsString(async (text) => {
+        try {
+          const parsed = JSON.parse(text);
+          if (!parsed.type) {
+            return;
+          }
+          console.log('parsedType', parsed.type)
+          if (parsed.type.toLowerCase() === 'activeselection') {
+            // We've got multiple items, so let's recreate the selection group
+            const objects = await util.enlivenObjects<FabricObject>(parsed.objects);
+            addObjectGroupToCanvas(objects);
+          } else  {
+            const [ object ] = await util.enlivenObjects<FabricObject>([parsed]);
+            if (!object) {
+              return;
+            }
+            addFabricObjectToCanvas(object);
+          }
+        } catch {}
+      });
     }
-    const objectUrl = URL.createObjectURL(file);
-    addImageToCanvas(objectUrl);
   }
 }
 
-function handleLocalCopy() {
-  console.log('plumbed');
+function addFabricObjectToCanvas(object: FabricObject) {
+  setEditableObjectProperties(object);
+  canvas.add(object);
+  canvas.bringObjectToFront(object);
+  canvas.viewportCenterObject(object);
+  canvas.setActiveObject(object);
+  save();
+}
 
+function addObjectGroupToCanvas(objects: Array<FabricObject>) {
+  for (const object of objects){
+    setEditableObjectProperties(object);
+    canvas.add(object);
+    canvas.bringObjectToFront(object);
+  }
+  const sel = new ActiveSelection(objects);
+  canvas.setActiveObject(sel);
+  canvas.viewportCenterObject(sel);
+  save();
+}
+
+function handleLocalCopy() {
+  console.log("plumbed");
+  const activeObject = canvas.getActiveObject();
+  if (!activeObject) {
+    return;
+  }
+  const objectAsJson = JSON.stringify(
+    activeObject.toObject(PROPERTIES_TO_INCLUDE)
+  );
+  return navigator.clipboard.writeText(objectAsJson);
 }
 
 /******
