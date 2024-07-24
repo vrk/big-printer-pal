@@ -6,8 +6,12 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld('electronAPI', {
   openFile: () => ipcRenderer.invoke('dialog:openFile'),
   downloadFile: (dataUrl: string) => ipcRenderer.invoke('dialog:downloadFile', dataUrl),
-  saveSnapshot: (jsonObject: Object) => ipcRenderer.invoke('autosave:saveSnapshot', jsonObject),
-  loadSnapshot: () => ipcRenderer.invoke('autosave:loadSnapshot'),
+
+  startNewUnsavedFile: () => ipcRenderer.invoke('dialog:createNewUnsavedFile'),
+  startNewSaveFile: () => ipcRenderer.invoke('dialog:createNewSaveFile'),
+  loadSaveFile: () => ipcRenderer.invoke('dialog:loadSaveFile'),
+  loadLastSaveIfAny: () => ipcRenderer.invoke('dialog:loadLastSaveFile'),
+  saveToFile: (jsonObject: Object) => ipcRenderer.invoke('dialog:saveFile', jsonObject),
 
   onLocalCopy: (callback: Function) => ipcRenderer.on('system:local-copy', (_event, value) => callback(value))
 })

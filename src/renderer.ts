@@ -19,16 +19,12 @@ import { changeDpiDataUrl } from "changedpi";
 
 // TODO: Check out https://codepen.io/janih/pen/EjaNXP for snap to grid
 
-let canvas = new Canvas("html-canvas", {
-  controlsAboveOverlay: true,
-  renderOnAddRemove: false
-});
-
 const CANVAS_DEFAULT_PPI = 72; // TODO: Kinda wrong I think but we'll keep this value for now
 const DEFAULT_PPI = 300;
 const DEFAULT_WIDTH_IN_INCHES = 8.5;
 const DEFAULT_HEIGHT_IN_INCHES = 11;
-const DEFAULT_DOC_BORDER_SIZE_IN_PIXELS = 4;
+const DEFAULT_DOC_WIDTH = DEFAULT_WIDTH_IN_INCHES * DEFAULT_PPI;
+const DEFAULT_DOC_HEIGHT = DEFAULT_HEIGHT_IN_INCHES * DEFAULT_PPI;
 const BACKGROUND_RECT_ID = "__background-id__";
 const PROPERTIES_TO_INCLUDE = [
   "id",
@@ -38,78 +34,107 @@ const PROPERTIES_TO_INCLUDE = [
   "transparentCorners",
 ];
 
+let canvas = new Canvas("html-canvas", {
+  controlsAboveOverlay: true,
+  renderOnAddRemove: false,
+});
+let documentRectangle: FabricObject;
 let ppi = DEFAULT_PPI;
-const docWidth = DEFAULT_WIDTH_IN_INCHES * ppi;
-const docHeight = DEFAULT_HEIGHT_IN_INCHES * ppi;
 
-function getPPIRatio() {
-  return ppi / CANVAS_DEFAULT_PPI;
-  // return 1;
-}
+let openedFilename: string | null = null;
 
 const overallContainer = document.getElementById("fabric-canvas-container");
-let doc: FabricObject;
-window.electronAPI.loadSnapshot().then(async (snapshot) => {
-  if (snapshot) {
-    ppi = snapshot.ppi;
-    canvas = await canvas.loadFromJSON(snapshot.canvasData);
-    doc = canvas.getObjects().find((obj) => obj.id === BACKGROUND_RECT_ID);
-    console.log(doc);
-    const editableObjects = canvas
-      .getObjects()
-      .filter((obj) => obj.id !== BACKGROUND_RECT_ID);
-    for (const object of editableObjects) {
-      setEditableObjectProperties(object);
-    }
-    console.log(canvas.getObjects());
+
+async function main() {
+  const loadedData = await window.electronAPI.loadLastSaveIfAny();
+  if (loadedData) {
+    await loadSnapshotData(loadedData);
   } else {
-    doc = new Rect({
-      id: BACKGROUND_RECT_ID,
-      fill: "white",
-      width: docWidth,
-      height: docHeight,
-
-      stroke: "#4B624C",
-      strokeWidth: 0,
-      selectable: false,
-      hasControls: false,
-      hoverCursor: "default",
-    });
-
-    canvas.add(doc);
-    canvas.centerObject(doc);
-    canvas.clipPath = doc;
+    createNewCanvas();
   }
+  initializeCanvas();
+
+  document.addEventListener("paste", onPaste);
+  window.electronAPI.onLocalCopy(handleLocalCopy);
+
+  canvas.requestRenderAll();
+}
+
+function initializeCanvas() {
+  setCanvasDimensions();
+  setInitialPaperValues();
+
   canvas.on("mouse:wheel", onMouseWheel);
   canvas.on("mouse:down", onMouseDown);
   canvas.on("mouse:move", onMouseMove);
   canvas.on("mouse:up", onMouseUp);
-  canvas.on("object:added", ({ target }) => {
-    enableSettingsBoxFor(target);
+  canvas.on("object:added", onObjectAdded);
+  canvas.on("object:modified", onObjectModified);
+  canvas.on("object:removed", onObjectRemoved);
+  canvas.on("object:moving", onObjectMoving);
+}
+
+function teardownCanvas() {
+  canvas.off("mouse:wheel", onMouseWheel);
+  canvas.off("mouse:down", onMouseDown);
+  canvas.off("mouse:move", onMouseMove);
+  canvas.off("mouse:up", onMouseUp);
+
+  canvas.off("object:added", onObjectAdded);
+  canvas.off("object:modified", onObjectModified);
+  canvas.off("object:removed", onObjectRemoved);
+  canvas.off("object:moving", onObjectMoving);
+}
+
+main();
+
+//////////////////
+
+// TODO: fix types
+async function loadSnapshotData(loadedData: any) {
+  teardownCanvas();
+
+  ppi = loadedData.snapshot.ppi;
+  canvas = await canvas.loadFromJSON(loadedData.snapshot.canvasData);
+  documentRectangle = canvas
+    .getObjects()
+    .find((obj) => obj.id === BACKGROUND_RECT_ID);
+  console.log(documentRectangle);
+  const editableObjects = canvas
+    .getObjects()
+    .filter((obj) => obj.id !== BACKGROUND_RECT_ID);
+  for (const object of editableObjects) {
+    setEditableObjectProperties(object);
+  }
+  openedFilename = loadedData.openedFileName;
+  console.log(canvas.getObjects());
+
+  initializeCanvas();
+}
+
+async function createNewCanvas() {
+  documentRectangle = new Rect({
+    id: BACKGROUND_RECT_ID,
+    fill: "white",
+    width: DEFAULT_DOC_WIDTH,
+    height: DEFAULT_DOC_HEIGHT,
+
+    stroke: "#4B624C",
+    strokeWidth: 0,
+    selectable: false,
+    hasControls: false,
+    hoverCursor: "default",
   });
-  canvas.on("object:modified", ({ target }) => {
-    save();
-  });
 
-  canvas.on("object:removed", ({ target }) => {
-    disableSettingsBoxFor(target);
-    save();
-  });
+  canvas.add(documentRectangle);
+  canvas.centerObject(documentRectangle);
+  canvas.clipPath = documentRectangle;
+}
 
-  canvas.on("object:moving", ({ target }) => {
-    matchInputsToObjectValues(target);
-  });
-
-  setCanvasDimensions();
-  setInitialPaperValues();
-  document.addEventListener("paste", onPaste);
-  window.electronAPI.onLocalCopy(handleLocalCopy);
-});
-
-let autosaveTimer: NodeJS.Timeout | null = null;
-let idleCallback: number | null = null;
-
-function save() {
+function onDocEdit() {
+  // TODO: Implement:
+  // - mark dirty
+  // - add to history
   // console.log('SAVIN');
   // clearTimeout(autosaveTimer);
   // if (idleCallback !== null) {
@@ -167,7 +192,7 @@ function setCanvasDimensions() {
   //   { backstoreOnly: true }
   // );
   const center = canvas.getCenterPoint();
-  let scale = util.findScaleToFit(doc, canvas) * 0.9; // TODO: fix eyeballing
+  let scale = util.findScaleToFit(documentRectangle, canvas) * 0.9; // TODO: fix eyeballing
   // const strokeWidth = Math.round(DEFAULT_DOC_BORDER_SIZE_IN_PIXELS / scale);
   // doc.strokeWidth = strokeWidth;
 
@@ -180,7 +205,7 @@ function setCanvasDimensions() {
   // END HACK
 
   canvas.zoomToPoint(center, scale);
-  setCenterFromObject(doc);
+  setCenterFromObject(documentRectangle);
   canvas.requestRenderAll();
 }
 
@@ -200,6 +225,38 @@ paperSettingsButton.addEventListener("click", () => {
   }
 });
 
+const saveButton = document.getElementById("save-canvas");
+saveButton.addEventListener("click", async () => {
+  if (!openedFilename) {
+    const result = await window.electronAPI.startNewSaveFile();
+    if (!result || result.canceled) {
+      // save cancelled
+      return;
+    }
+    openedFilename = result.fileName;
+  }
+
+  const data = {
+    ppi,
+    canvasData: canvas.toObject(PROPERTIES_TO_INCLUDE),
+  };
+  const saveResult = await window.electronAPI.saveToFile(data);
+  console.log("save", saveResult ? "succeeded" : "failed");
+});
+
+const loadButton = document.getElementById("load-canvas");
+loadButton.addEventListener("click", async () => {
+  const result = await window.electronAPI.loadSaveFile();
+  if (!result) {
+    return; // canceled
+  }
+  loadSnapshotData(result);
+
+});
+
+const newButton = document.getElementById("new-canvas");
+newButton.addEventListener("click", async () => {});
+
 const printButton = document.getElementById("download-to-print");
 printButton.addEventListener("click", async () => {
   // Clone canvas and remove background rect.
@@ -213,7 +270,7 @@ printButton.addEventListener("click", async () => {
   clonedCanvas.remove(object);
 
   clonedCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-  const { left, top, width, height } = doc;
+  const { left, top, width, height } = documentRectangle;
   const format: ImageFormat = "png";
   const options = {
     name: "New Image",
@@ -230,22 +287,8 @@ printButton.addEventListener("click", async () => {
   console.log("data url finished", performance.now());
   const dataUrlAdjustedDPI = changeDpiDataUrl(dataUrl, ppi);
   console.log("change dpi finished", performance.now());
-  // downloadFile(dataUrlAdjustedDPI, "saved.png");
   await window.electronAPI.downloadFile(dataUrlAdjustedDPI);
 });
-
-function downloadFile(dataUrl: string, filename: string) {
-  console.log("start create a element", performance.now());
-  const anchorEl = document.createElement("a");
-  anchorEl.href = dataUrl;
-  anchorEl.download = filename;
-  console.log("element download created", performance.now());
-  // document.body.appendChild(anchorEl); // required for firefox
-  anchorEl.click();
-  console.log("element download clicked", performance.now());
-  anchorEl.remove();
-  console.log("element download removed", performance.now());
-}
 
 let altKeyPressed = false;
 
@@ -262,11 +305,6 @@ function onMouseWheel(opt) {
       const center = canvas.getCenterPoint();
       canvas.zoomToPoint(center, zoom);
 
-      // TODO: why doesn't this work better than it does
-      // const strokeWidth = Math.round(
-      //   DEFAULT_DOC_BORDER_SIZE_IN_PIXELS / canvas.getZoom()
-      // );
-      // doc.strokeWidth = strokeWidth;
       canvas.requestRenderAll();
     } else {
       console.log(canvas.viewportTransform);
@@ -275,9 +313,26 @@ function onMouseWheel(opt) {
       const vpt = this.viewportTransform;
       vpt[5] -= delta;
       canvas.setViewportTransform(vpt);
-      enclose(canvas, doc);
+      enclose(canvas, documentRectangle);
     }
   });
+}
+
+function onObjectAdded({target}) {
+  enableSettingsBoxFor(target);
+}
+
+function onObjectModified() {
+  onDocEdit();
+}
+
+function onObjectRemoved({target}) {
+  disableSettingsBoxFor(target);
+  onDocEdit();
+}
+
+function onObjectMoving({target}) {
+  matchInputsToObjectValues(target);
 }
 
 document.addEventListener("keydown", function (event) {
@@ -355,13 +410,15 @@ async function onPaste(e: ClipboardEvent) {
           if (!parsed.type) {
             return;
           }
-          console.log('parsedType', parsed.type)
-          if (parsed.type.toLowerCase() === 'activeselection') {
+          console.log("parsedType", parsed.type);
+          if (parsed.type.toLowerCase() === "activeselection") {
             // We've got multiple items, so let's recreate the selection group
-            const objects = await util.enlivenObjects<FabricObject>(parsed.objects);
+            const objects = await util.enlivenObjects<FabricObject>(
+              parsed.objects
+            );
             addObjectGroupToCanvas(objects);
-          } else  {
-            const [ object ] = await util.enlivenObjects<FabricObject>([parsed]);
+          } else {
+            const [object] = await util.enlivenObjects<FabricObject>([parsed]);
             if (!object) {
               return;
             }
@@ -380,11 +437,11 @@ function addFabricObjectToCanvas(object: FabricObject) {
   canvas.viewportCenterObject(object);
   canvas.setActiveObject(object);
   canvas.requestRenderAll();
-  save();
+  onDocEdit();
 }
 
 function addObjectGroupToCanvas(objects: Array<FabricObject>) {
-  for (const object of objects){
+  for (const object of objects) {
     setEditableObjectProperties(object);
     canvas.add(object);
     canvas.bringObjectToFront(object);
@@ -393,7 +450,7 @@ function addObjectGroupToCanvas(objects: Array<FabricObject>) {
   canvas.setActiveObject(sel);
   canvas.viewportCenterObject(sel);
   canvas.requestRenderAll();
-  save();
+  onDocEdit();
 }
 
 function handleLocalCopy() {
@@ -421,7 +478,7 @@ let lastPosX: any = null;
 let lastPosY: any = null;
 
 function enclose(canvas: Canvas, object: Rect) {
-  console.log('ENCLOSE CALLED');
+  console.log("ENCLOSE CALLED");
   const {
     br: brRaw, // bottom right
     tl: tlRaw, // top left
@@ -508,8 +565,8 @@ function onMouseMove(opt) {
   canvas.requestRenderAll();
   lastPosX = clientX;
   lastPosY = clientY;
-  enclose(canvas, doc);
-  save();
+  enclose(canvas, documentRectangle);
+  onDocEdit();
 }
 
 const settingsBox = document.getElementById("settings-box");
@@ -535,7 +592,9 @@ function onMouseUp(opt: TPointerEventInfo) {
   canvas.selection = true; // reenable selection after grab
   if (
     !settingsBox.hidden &&
-    (opt.target === undefined || opt.target === doc || !opt.target.selectable)
+    (opt.target === undefined ||
+      opt.target === documentRectangle ||
+      !opt.target.selectable)
   ) {
     disableSettingsBoxFor(opt.target);
   } else if (canvas.getActiveObject()) {
@@ -580,24 +639,24 @@ const paperPpiInput = document.getElementById(
 
 function setInitialPaperValues() {
   paperPpiInput.value = `${ppi}`;
-  paperHeightInput.value = `${doc.height / ppi}`;
-  paperWidthInput.value = `${doc.width / ppi}`;
+  paperHeightInput.value = `${documentRectangle.height / ppi}`;
+  paperWidthInput.value = `${documentRectangle.width / ppi}`;
 }
 
 paperWidthInput.addEventListener("input", () => {
   try {
     const value = parseFloat(paperWidthInput.value) * ppi;
     if (value) {
-      doc.width = value;
-      canvas.clipPath = doc;
-      save();
+      documentRectangle.width = value;
+      canvas.clipPath = documentRectangle;
+      onDocEdit();
       canvas.requestRenderAll();
     } else {
       throw new Error(`invalid value ${value}`);
     }
   } catch (e) {
     console.log(e);
-    objectWidthInput.value = DEFAULT_WIDTH_IN_INCHES + "";
+    // objectWidthInput.value = DEFAULT_WIDTH_IN_INCHES + "";
   }
 });
 
@@ -605,16 +664,16 @@ paperHeightInput.addEventListener("input", () => {
   try {
     const value = parseFloat(paperHeightInput.value) * ppi;
     if (value) {
-      doc.height = value;
-      canvas.clipPath = doc;
-      save();
+      documentRectangle.height = value;
+      canvas.clipPath = documentRectangle;
+      onDocEdit();
       canvas.requestRenderAll();
     } else {
       throw new Error(`invalid value ${value}`);
     }
   } catch (e) {
     console.log(e);
-    paperHeightInput.value = DEFAULT_HEIGHT_IN_INCHES + "";
+    // paperHeightInput.value = DEFAULT_HEIGHT_IN_INCHES + "";
   }
 });
 
@@ -622,20 +681,20 @@ paperPpiInput.addEventListener("input", () => {
   try {
     const value = parseFloat(paperPpiInput.value);
     if (value) {
-      const oldDocWidthInInches = doc.width / ppi;
-      const oldDocHeightInInches = doc.height / ppi;
+      const oldDocWidthInInches = documentRectangle.width / ppi;
+      const oldDocHeightInInches = documentRectangle.height / ppi;
       ppi = value;
-      doc.width = oldDocWidthInInches * ppi;
-      doc.height = oldDocHeightInInches * ppi;
-      canvas.clipPath = doc;
-      save();
+      documentRectangle.width = oldDocWidthInInches * ppi;
+      documentRectangle.height = oldDocHeightInInches * ppi;
+      canvas.clipPath = documentRectangle;
+      onDocEdit();
       canvas.requestRenderAll();
     } else {
       throw new Error(`invalid value ${value}`);
     }
   } catch (e) {
     console.log(e);
-    paperHeightInput.value = DEFAULT_PPI + "";
+    // paperHeightInput.value = DEFAULT_PPI + "";
   }
 });
 
@@ -728,7 +787,7 @@ function setScaledHeight(object: FabricObject, newHeightInput: string) {
 }
 
 function setObjectX(object: FabricObject, newXInput: string) {
-  const topLeftOrigin = doc.aCoords.tl;
+  const topLeftOrigin = documentRectangle.aCoords.tl;
   try {
     const value = parseFloat(newXInput) * ppi + topLeftOrigin.x;
     if (value) {
@@ -743,7 +802,7 @@ function setObjectX(object: FabricObject, newXInput: string) {
 }
 
 function setObjectY(object: FabricObject, newYInput: string) {
-  const topLeftOrigin = doc.aCoords.tl;
+  const topLeftOrigin = documentRectangle.aCoords.tl;
   try {
     const value = parseFloat(newYInput) * ppi + topLeftOrigin.y;
     if (value) {
@@ -766,14 +825,14 @@ function getScaledHeightInInches(object: FabricObject) {
 }
 
 function getObjectXInInches(object: FabricObject) {
-  const topLeftOrigin = doc.aCoords.tl;
+  const topLeftOrigin = documentRectangle.aCoords.tl;
   const objectTopLeft = object.aCoords.tl;
   const xInPixels = objectTopLeft.x - topLeftOrigin.x;
   return (xInPixels / ppi).toFixed(3);
 }
 
 function getObjectYInInches(object: FabricObject) {
-  const topLeftOrigin = doc.aCoords.tl;
+  const topLeftOrigin = documentRectangle.aCoords.tl;
   const objectTopLeft = object.aCoords.tl;
   const yInPixels = objectTopLeft.y - topLeftOrigin.y;
   return (yInPixels / ppi).toFixed(3);

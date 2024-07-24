@@ -9,6 +9,7 @@ import SimpleElectronStore from "./simple-store.js";
 // }
 
 const isMac = process.platform === "darwin";
+const LAST_SAVED_FILE_PATH_KEY = "__last_opened_file__";
 
 function buildMenu(mainWindow) {
   const template = [
@@ -158,8 +159,11 @@ const store = new SimpleElectronStore();
 app.whenReady().then(() => {
   ipcMain.handle("dialog:openFile", handleFileOpen);
   ipcMain.handle("dialog:downloadFile", handleFileDownload);
-  ipcMain.handle("autosave:saveSnapshot", handleSaveSnapshot);
-  ipcMain.handle("autosave:loadSnapshot", handleLoadSnapshot);
+  ipcMain.handle("dialog:createNewUnsavedFile", handleNewFile);
+  ipcMain.handle("dialog:createNewSaveFile", handleNewSaveFile);
+  ipcMain.handle("dialog:loadSaveFile", handleLoadData);
+  ipcMain.handle("dialog:loadLastSaveFile", handleLoadLastSaveIfAny);
+  ipcMain.handle("dialog:saveFile", handleSaveData);
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
@@ -169,12 +173,74 @@ app.whenReady().then(() => {
 
 const SNAPSHOT_KEY = "__snapshot-key__";
 
-async function handleSaveSnapshot(_: any, dataUrl: Object) {
-  store.set(SNAPSHOT_KEY, dataUrl);
+let saveFilePath : string | null = null;
+
+async function handleNewFile() {
+  store.delete(LAST_SAVED_FILE_PATH_KEY);
 }
 
-async function handleLoadSnapshot() {
-  return store.get(SNAPSHOT_KEY);
+async function handleNewSaveFile() {
+  const options = {
+    title: "Save file",
+    defaultPath: "printable.json",
+    buttonLabel: "Save",
+
+    filters: [
+      { name: "json", extensions: ["json"] },
+      { name: "All Files", extensions: ["*"] },
+    ],
+  };
+  const {canceled, filePath} = await dialog.showSaveDialog(null, options);
+  if (!canceled) {
+    saveFilePath = filePath;
+  }
+  return { canceled, filePath };
+}
+
+async function handleSaveData(_: any, data: Object) {
+  if (!saveFilePath) {
+    return false;
+  }
+  fs.writeFileSync(saveFilePath, JSON.stringify(data));
+  store.set(LAST_SAVED_FILE_PATH_KEY, saveFilePath);
+  return true;
+}
+
+async function handleLoadLastSaveIfAny(_: any) {
+  const lastFileOpen = store.get(LAST_SAVED_FILE_PATH_KEY);
+  if (!lastFileOpen) {
+    return null;
+  }
+  saveFilePath = lastFileOpen;
+  return loadSaveFileFromDisk(saveFilePath);
+}
+
+async function handleLoadData(_: any) {
+  const result = await dialog.showOpenDialog({
+    properties: ["openFile"],
+    filters: [{ name: "Documents", extensions: ["json"] }, { name: "All Files", extensions: ["*"] }],
+  });
+
+  const { canceled, filePaths } = result;
+  if (canceled || filePaths.length === 0) {
+    return null;
+  }
+  return loadSaveFileFromDisk(filePaths[0])
+}
+
+async function loadSaveFileFromDisk(filePath) {
+  try {
+    const snapshot = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    return {
+      snapshot,
+      openedFileName: path.basename(filePath)
+    };
+  } catch (e) {
+    console.log(e);
+    store.delete(LAST_SAVED_FILE_PATH_KEY);
+    return null;
+  }
+
 }
 
 async function handleFileOpen() {
@@ -194,12 +260,12 @@ async function handleFileOpen() {
 
 async function handleFileDownload(_: any, dataUrl: string) {
   var options = {
-    title: "Save file",
-    defaultPath: "printabl fe.png",
+    title: "Download print file",
+    defaultPath: "printable-file.png",
     buttonLabel: "Save",
 
     filters: [
-      { name: "png", extensions: ["png"] },
+      { name: "PNG image", extensions: ["png"] },
       { name: "All Files", extensions: ["*"] },
     ],
   };
