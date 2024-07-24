@@ -21,6 +21,7 @@ import { changeDpiDataUrl } from "changedpi";
 
 let canvas = new Canvas("html-canvas", {
   controlsAboveOverlay: true,
+  renderOnAddRemove: false
 });
 
 const CANVAS_DEFAULT_PPI = 72; // TODO: Kinda wrong I think but we'll keep this value for now
@@ -108,14 +109,19 @@ window.electronAPI.loadSnapshot().then(async (snapshot) => {
 let autosaveTimer: NodeJS.Timeout | null = null;
 
 function save() {
-  clearTimeout(autosaveTimer);
-  autosaveTimer = setTimeout(function () {
-    const data = {
-      ppi,
-      canvasData: canvas.toObject(PROPERTIES_TO_INCLUDE),
-    };
-    window.electronAPI.saveSnapshot(data);
-  }, 500);
+  // console.log('SAVIN');
+  // clearTimeout(autosaveTimer);
+  // autosaveTimer = setTimeout(function () {
+  //   requestIdleCallback(() => {
+  //     console.log('oop', performance.now());
+  //     const data = {
+  //       ppi,
+  //       canvasData: canvas.toObject(PROPERTIES_TO_INCLUDE),
+  //     };
+  //     console.log('after', performance.now());
+  //     window.electronAPI.saveSnapshot(data);
+  //   })
+  // }, 500);
 }
 
 window.addEventListener("resize", function () {
@@ -173,7 +179,7 @@ function setCanvasDimensions() {
 
   canvas.zoomToPoint(center, scale);
   setCenterFromObject(doc);
-  canvas.renderAll();
+  canvas.requestRenderAll();
 }
 
 function redoClone(toClone: Canvas) {
@@ -259,7 +265,7 @@ function onMouseWheel(opt) {
       //   DEFAULT_DOC_BORDER_SIZE_IN_PIXELS / canvas.getZoom()
       // );
       // doc.strokeWidth = strokeWidth;
-      canvas.renderAll();
+      canvas.requestRenderAll();
     } else {
       console.log(canvas.viewportTransform);
       // pan up and down
@@ -371,6 +377,7 @@ function addFabricObjectToCanvas(object: FabricObject) {
   canvas.bringObjectToFront(object);
   canvas.viewportCenterObject(object);
   canvas.setActiveObject(object);
+  canvas.requestRenderAll();
   save();
 }
 
@@ -383,6 +390,7 @@ function addObjectGroupToCanvas(objects: Array<FabricObject>) {
   const sel = new ActiveSelection(objects);
   canvas.setActiveObject(sel);
   canvas.viewportCenterObject(sel);
+  canvas.requestRenderAll();
   save();
 }
 
@@ -411,6 +419,7 @@ let lastPosX: any = null;
 let lastPosY: any = null;
 
 function enclose(canvas: Canvas, object: Rect) {
+  console.log('ENCLOSE CALLED');
   const {
     br: brRaw, // bottom right
     tl: tlRaw, // top left
