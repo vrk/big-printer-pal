@@ -1,12 +1,12 @@
 import { app, BrowserWindow, Menu, dialog, ipcMain } from "electron";
 import path from "path";
 import fs from "fs";
-import SimpleElectronStore from "./simple-store.js";
+import SimpleElectronStore from "./simple-store";
 
-// // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-// if (require("electron-squirrel-startup")) {
-//   app.quit();
-// }
+// Handle creating/removing shortcuts on Windows when installing/uninstalling.
+if (require("electron-squirrel-startup")) {
+  app.quit();
+}
 
 const isMac = process.platform === "darwin";
 const LAST_SAVED_FILE_PATH_KEY = "__last_opened_file__";
@@ -120,8 +120,7 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     show: false,
     webPreferences: {
-      preload: path.join(import.meta.dirname, 'preload.js'),
-      // nodeIntegrationInWorker: true
+      preload: path.join(__dirname, "preload.js"),
     },
   });
   mainWindow.maximize();
@@ -140,7 +139,7 @@ const createWindow = () => {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
     mainWindow.loadFile(
-      path.join(import.meta.dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
+      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
     );
   }
 };

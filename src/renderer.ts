@@ -153,18 +153,17 @@ function onDocEdit() {
   // - add to history
   // console.log('SAVIN');
   // clearTimeout(autosaveTimer);
-  // if (idleCallback !== null) {
-  //   cancelIdleCallback(idleCallback);
-  // }
-  // idleCallback = requestIdleCallback(() => {
-  //   console.log('oop', performance.now());
-  //   const data = {
-  //     ppi,
-  //     canvasData: canvas.toObject(PROPERTIES_TO_INCLUDE),
-  //   };
-  //   console.log('after', performance.now());
-  //   window.electronAPI.saveSnapshot(data);
-  // });
+  // autosaveTimer = setTimeout(function () {
+  //   requestIdleCallback(() => {
+  //     console.log('oop', performance.now());
+  //     const data = {
+  //       ppi,
+  //       canvasData: canvas.toObject(PROPERTIES_TO_INCLUDE),
+  //     };
+  //     console.log('after', performance.now());
+  //     window.electronAPI.saveSnapshot(data);
+  //   })
+  // }, 500);
 }
 
 

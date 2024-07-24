@@ -1,7 +1,6 @@
 import type { ConfigEnv, UserConfig } from 'vite';
 import { defineConfig, mergeConfig } from 'vite';
 import { getBuildConfig, getBuildDefine, external, pluginHotRestart } from './vite.base.config';
-import vitePluginRequire from 'vite-plugin-require';
 
 // https://vitejs.dev/config
 export default defineConfig((env) => {
@@ -13,13 +12,13 @@ export default defineConfig((env) => {
       lib: {
         entry: forgeConfigSelf.entry!,
         fileName: () => '[name].js',
-        formats: ['es'],
+        formats: ['cjs'],
       },
       rollupOptions: {
         external,
       },
     },
-    plugins: [pluginHotRestart('restart'), (vitePluginRequire as any).default()],
+    plugins: [pluginHotRestart('restart')],
     define,
     resolve: {
       // Load the Node.js entry.
