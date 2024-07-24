@@ -44,13 +44,15 @@ window.electronAPI.loadSnapshot().then(async (snapshot) => {
   if (snapshot) {
     ppi = snapshot.ppi;
     canvas = await canvas.loadFromJSON(snapshot.canvasData);
-    doc = canvas.getObjects().find(obj => obj.id === BACKGROUND_RECT_ID);
+    doc = canvas.getObjects().find((obj) => obj.id === BACKGROUND_RECT_ID);
     console.log(doc);
-    const editableObjects = canvas.getObjects().filter(obj => obj.id !== BACKGROUND_RECT_ID);
+    const editableObjects = canvas
+      .getObjects()
+      .filter((obj) => obj.id !== BACKGROUND_RECT_ID);
     for (const object of editableObjects) {
       setEditableObjectProperties(object);
     }
-    console.log(canvas.getObjects())
+    console.log(canvas.getObjects());
   } else {
     doc = new Rect({
       id: BACKGROUND_RECT_ID,
@@ -69,14 +71,14 @@ window.electronAPI.loadSnapshot().then(async (snapshot) => {
     canvas.centerObject(doc);
     canvas.clipPath = doc;
   }
-  canvas.on('mouse:wheel', onMouseWheel);
+  canvas.on("mouse:wheel", onMouseWheel);
   canvas.on("mouse:down", onMouseDown);
   canvas.on("mouse:move", onMouseMove);
   canvas.on("mouse:up", onMouseUp);
   canvas.on("object:added", ({ target }) => {
     enableSettingsBoxFor(target);
   });
-  canvas.on('object:modified', ({ target }) => {
+  canvas.on("object:modified", ({ target }) => {
     save();
   });
 
@@ -91,6 +93,7 @@ window.electronAPI.loadSnapshot().then(async (snapshot) => {
 
   setCanvasDimensions();
   setInitialPaperValues();
+  document.addEventListener("paste", onPaste);
 });
 
 let autosaveTimer: NodeJS.Timeout | null = null;
@@ -99,9 +102,15 @@ function save() {
   clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(function () {
     const data = {
-      ppi, 
-      canvasData: canvas.toObject(['id', 'selectable', 'hasControls', 'hoverCursor', 'transparentCorners', ])
-    }
+      ppi,
+      canvasData: canvas.toObject([
+        "id",
+        "selectable",
+        "hasControls",
+        "hoverCursor",
+        "transparentCorners",
+      ]),
+    };
     window.electronAPI.saveSnapshot(data);
   }, 500);
 }
@@ -228,7 +237,7 @@ function downloadFile(dataUrl: string, filename: string) {
 }
 
 let altKeyPressed = false;
-  
+
 function onMouseWheel(opt) {
   opt.e.preventDefault();
   opt.e.stopPropagation();
@@ -294,14 +303,17 @@ addImageButton.addEventListener("click", async () => {
   console.log("hi");
   const base64 = await window.electronAPI.openFile();
   const url = `data:image/png;base64,${base64}`;
-  const image = await FabricImage.fromURL(url);
+});
+
+async function addImageToCanvas(dataUrl) {
+  const image = await FabricImage.fromURL(dataUrl);
   setEditableObjectProperties(image);
   canvas.add(image);
   canvas.viewportCenterObject(image);
   canvas.setActiveObject(image);
   canvas.bringObjectToFront(image);
   save();
-});
+}
 
 function setEditableObjectProperties(object: FabricObject) {
   object.set({
@@ -315,7 +327,18 @@ function setEditableObjectProperties(object: FabricObject) {
     mr: false,
   });
   object.snapAngle = 5;
+}
 
+async function onPaste(e: ClipboardEvent) {
+  e.preventDefault();
+  for (const item of e.clipboardData.items) {
+    const file = item.getAsFile();
+    if (!file || !item.type.startsWith('image/')) {
+      continue;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    addImageToCanvas(objectUrl);
+  }
 }
 
 /******
@@ -381,6 +404,7 @@ function getClientPosition(e) {
 
 function onMouseDown(opt: TPointerEventInfo) {
   disablePaperSettingsBox();
+  console.log("clicked ", opt.target);
   // Ignore clicks on doc or objects
   if (opt.target !== undefined) {
     if (opt.target.selectable) {
@@ -397,6 +421,7 @@ function onMouseDown(opt: TPointerEventInfo) {
   isDragging = true;
   lastPosX = clientX;
   lastPosY = clientY;
+  canvas.selection = false; // disable selection while grabbing
   canvas.discardActiveObject();
 }
 
@@ -438,6 +463,7 @@ let activeInputController = new AbortController();
 
 function onMouseUp(opt: TPointerEventInfo) {
   isDragging = false;
+  canvas.selection = true; // reenable selection after grab
   if (
     !settingsBox.hidden &&
     (opt.target === undefined || opt.target === doc || !opt.target.selectable)
@@ -482,7 +508,6 @@ const paperHeightInput = document.getElementById(
 const paperPpiInput = document.getElementById(
   "input-paper-ppi"
 ) as HTMLInputElement;
-
 
 function setInitialPaperValues() {
   paperPpiInput.value = `${ppi}`;
