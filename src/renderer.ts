@@ -39,9 +39,11 @@ let documentRectangle: FabricObject;
 let ppi: number;
 
 let openedFilename: string | null = null;
+let needsSave = false;
 
 const overallContainer = document.getElementById("fabric-canvas-container");
 
+const fileNameBox = document.getElementById("file-name");
 const paperSettingsBox = document.getElementById("paper-settings-box");
 const paperWidthInput = document.getElementById(
   "input-paper-width"
@@ -121,6 +123,8 @@ async function loadSnapshotData(loadedData: any) {
     setEditableObjectProperties(object);
   }
   openedFilename = loadedData.openedFileName;
+  fileNameBox.innerHTML = openedFilename;
+  saveButton.disabled = true;
   console.log(canvas.getObjects());
 
   setInitialPaperValues();
@@ -155,11 +159,17 @@ async function createNewCanvas() {
   canvas.clipPath = documentRectangle;
 
   openedFilename = null;
+  fileNameBox.innerHTML = 'Untitled';
+  saveButton.disabled = true;
   setInitialPaperValues();
   addCanvasEventListeners();
 }
 
 function onDocEdit() {
+  needsSave = true;
+  saveButton.disabled = false;
+  const name = openedFilename ? openedFilename : 'Untitled';
+  fileNameBox.innerHTML = `${name}*`;
   // TODO: Implement:
   // - mark dirty
   // - add to history
@@ -233,7 +243,7 @@ paperSettingsButton.addEventListener("click", () => {
   }
 });
 
-const saveButton = document.getElementById("save-canvas");
+const saveButton = document.getElementById("save-canvas") as HTMLButtonElement;
 saveButton.addEventListener("click", async () => {
   if (!openedFilename) {
     const result = await window.electronAPI.startNewSaveFile();
@@ -242,6 +252,8 @@ saveButton.addEventListener("click", async () => {
       return;
     }
     openedFilename = result.openedFileName;
+    fileNameBox.innerHTML = openedFilename;
+    saveButton.disabled = true;
   }
 
   const data = {
@@ -250,6 +262,10 @@ saveButton.addEventListener("click", async () => {
   };
   const saveResult = await window.electronAPI.saveToFile(data);
   console.log("save", saveResult ? "succeeded" : "failed");
+  if (saveResult) {
+    fileNameBox.innerHTML = openedFilename;
+    saveButton.disabled = true;
+  }
 });
 
 const loadButton = document.getElementById("load-canvas");

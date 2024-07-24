@@ -126,7 +126,6 @@ button.nav-button {
   border: none;
   font-family: 'Nunito';
   font-size: 32px;
-  cursor: pointer;
   display: block;
   border-radius: 100px;
   padding: 2px 18px
@@ -138,8 +137,9 @@ button.nav-button {
   cursor: pointer;
 }
 
-button.nav-button:hover {
+button.nav-button:hover:enabled {
   background-color: #FFF6B2;
+  cursor: pointer;
 }
 
 #settings:hover {
@@ -198,6 +198,11 @@ input[type=number] {
   margin-left: auto;
   margin-right: auto;
   margin-bottom: 18px;
+}
+
+#file-name {
+  font-size: 24px;
+  font-style: italic;
 }
 
 [hidden] { display: none !important; }
