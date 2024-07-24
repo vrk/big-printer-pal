@@ -45,6 +45,11 @@ window.electronAPI.loadSnapshot().then(async (snapshot) => {
     ppi = snapshot.ppi;
     canvas = await canvas.loadFromJSON(snapshot.canvasData);
     doc = canvas.getObjects().find(obj => obj.id === BACKGROUND_RECT_ID);
+    console.log(doc);
+    const editableObjects = canvas.getObjects().filter(obj => obj.id !== BACKGROUND_RECT_ID);
+    for (const object of editableObjects) {
+      setEditableObjectProperties(object);
+    }
     console.log(canvas.getObjects())
   } else {
     doc = new Rect({
@@ -71,6 +76,9 @@ window.electronAPI.loadSnapshot().then(async (snapshot) => {
   canvas.on("object:added", ({ target }) => {
     enableSettingsBoxFor(target);
   });
+  canvas.on('object:modified', ({ target }) => {
+    save();
+  });
 
   canvas.on("object:removed", ({ target }) => {
     disableSettingsBoxFor(target);
@@ -79,7 +87,6 @@ window.electronAPI.loadSnapshot().then(async (snapshot) => {
 
   canvas.on("object:moving", ({ target }) => {
     matchInputsToObjectValues(target);
-    save();
   });
 
   setCanvasDimensions();
@@ -93,7 +100,7 @@ function save() {
   autosaveTimer = setTimeout(function () {
     const data = {
       ppi, 
-      canvasData: canvas.toObject(['id', 'selectable', 'hasControls', 'hoverCursor'])
+      canvasData: canvas.toObject(['id', 'selectable', 'hasControls', 'hoverCursor', 'transparentCorners', ])
     }
     window.electronAPI.saveSnapshot(data);
   }, 500);
@@ -288,23 +295,28 @@ addImageButton.addEventListener("click", async () => {
   const base64 = await window.electronAPI.openFile();
   const url = `data:image/png;base64,${base64}`;
   const image = await FabricImage.fromURL(url);
-  image.set({
-    transparentCorners: false,
-    selectable: true,
-  });
-  image.setControlsVisibility({
-    mt: false, // middle top disable
-    mb: false, // midle bottom
-    ml: false, // middle left
-    mr: false,
-  });
-  image.snapAngle = 5;
+  setEditableObjectProperties(image);
   canvas.add(image);
   canvas.viewportCenterObject(image);
   canvas.setActiveObject(image);
   canvas.bringObjectToFront(image);
   save();
 });
+
+function setEditableObjectProperties(object: FabricObject) {
+  object.set({
+    transparentCorners: false,
+    selectable: true,
+  });
+  object.setControlsVisibility({
+    mt: false, // middle top disable
+    mb: false, // midle bottom
+    ml: false, // middle left
+    mr: false,
+  });
+  object.snapAngle = 5;
+
+}
 
 /******
  *
@@ -484,6 +496,7 @@ paperWidthInput.addEventListener("input", () => {
     if (value) {
       doc.width = value;
       canvas.clipPath = doc;
+      save();
       canvas.requestRenderAll();
     } else {
       throw new Error(`invalid value ${value}`);
@@ -500,6 +513,7 @@ paperHeightInput.addEventListener("input", () => {
     if (value) {
       doc.height = value;
       canvas.clipPath = doc;
+      save();
       canvas.requestRenderAll();
     } else {
       throw new Error(`invalid value ${value}`);
@@ -520,6 +534,7 @@ paperPpiInput.addEventListener("input", () => {
       doc.width = oldDocWidthInInches * ppi;
       doc.height = oldDocHeightInInches * ppi;
       canvas.clipPath = doc;
+      save();
       canvas.requestRenderAll();
     } else {
       throw new Error(`invalid value ${value}`);
