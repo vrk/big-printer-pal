@@ -176,6 +176,7 @@ let saveFilePath : string | null = null;
 
 async function handleNewFile() {
   store.delete(LAST_SAVED_FILE_PATH_KEY);
+  saveFilePath = null;
 }
 
 async function handleNewSaveFile() {
@@ -193,7 +194,7 @@ async function handleNewSaveFile() {
   if (!canceled) {
     saveFilePath = filePath;
   }
-  return { canceled, filePath };
+  return { canceled, openedFileName: path.basename(filePath) };
 }
 
 async function handleSaveData(_: any, data: Object) {
@@ -230,6 +231,8 @@ async function handleLoadData(_: any) {
 async function loadSaveFileFromDisk(filePath) {
   try {
     const snapshot = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    store.set(LAST_SAVED_FILE_PATH_KEY, filePath);
+    saveFilePath = filePath;
     return {
       snapshot,
       openedFileName: path.basename(filePath)

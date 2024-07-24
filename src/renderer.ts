@@ -42,12 +42,23 @@ let openedFilename: string | null = null;
 
 const overallContainer = document.getElementById("fabric-canvas-container");
 
+const paperSettingsBox = document.getElementById("paper-settings-box");
+const paperWidthInput = document.getElementById(
+  "input-paper-width"
+) as HTMLInputElement;
+const paperHeightInput = document.getElementById(
+  "input-paper-height"
+) as HTMLInputElement;
+const paperPpiInput = document.getElementById(
+  "input-paper-ppi"
+) as HTMLInputElement;
+
 async function main() {
+  createNewCanvas();
   const loadedData = await window.electronAPI.loadLastSaveIfAny();
   if (loadedData) {
+    console.log(loadedData);
     await loadSnapshotData(loadedData);
-  } else {
-    createNewCanvas();
   }
   setCanvasDimensionsToWindowSize();
   zoomToFitDocument();
@@ -97,6 +108,7 @@ async function loadSnapshotData(loadedData: any) {
   }
 
   ppi = loadedData.snapshot.ppi;
+  console.log(loadedData.snapshot.canvasData);
   canvas = await canvas.loadFromJSON(loadedData.snapshot.canvasData);
   documentRectangle = canvas
     .getObjects()
@@ -229,7 +241,7 @@ saveButton.addEventListener("click", async () => {
       // save cancelled
       return;
     }
-    openedFilename = result.fileName;
+    openedFilename = result.openedFileName;
   }
 
   const data = {
@@ -634,16 +646,6 @@ function createImagePreviewSrc(object: FabricObject) {
   return offscreenCanvas.toDataURL();
 }
 
-const paperSettingsBox = document.getElementById("paper-settings-box");
-const paperWidthInput = document.getElementById(
-  "input-paper-width"
-) as HTMLInputElement;
-const paperHeightInput = document.getElementById(
-  "input-paper-height"
-) as HTMLInputElement;
-const paperPpiInput = document.getElementById(
-  "input-paper-ppi"
-) as HTMLInputElement;
 
 function setInitialPaperValues() {
   paperPpiInput.value = `${ppi}`;
