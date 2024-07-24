@@ -24,9 +24,6 @@ let canvas = new Canvas("html-canvas", {
   renderOnAddRemove: false
 });
 
-const worker = new Worker(new URL('./worker.ts', import.meta.url))
-
-
 const CANVAS_DEFAULT_PPI = 72; // TODO: Kinda wrong I think but we'll keep this value for now
 const DEFAULT_PPI = 300;
 const DEFAULT_WIDTH_IN_INCHES = 8.5;
