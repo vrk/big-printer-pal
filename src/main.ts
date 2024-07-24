@@ -251,7 +251,7 @@ async function handleFileOpen() {
 
   const { canceled, filePaths } = result;
   if (canceled) {
-    return;
+    return null;
   }
   const fileData = await fs.promises.readFile(filePaths[0]);
   const base64 = fileData.toString("base64");

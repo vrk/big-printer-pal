@@ -34,10 +34,7 @@ const PROPERTIES_TO_INCLUDE = [
   "transparentCorners",
 ];
 
-let canvas = new Canvas("html-canvas", {
-  controlsAboveOverlay: true,
-  renderOnAddRemove: false,
-});
+let canvas: Canvas;
 let documentRectangle: FabricObject;
 let ppi: number;
 
@@ -54,8 +51,6 @@ async function main() {
   }
   setCanvasDimensionsToWindowSize();
   zoomToFitDocument();
-  setInitialPaperValues();
-  addCanvasEventListeners();
 
   window.addEventListener("resize", onWindowResize);
   document.addEventListener("paste", onPaste);
@@ -65,6 +60,7 @@ async function main() {
 }
 
 function addCanvasEventListeners() {
+  console.log('event listeners added!');
   canvas.on("mouse:wheel", onMouseWheel);
   canvas.on("mouse:down", onMouseDown);
   canvas.on("mouse:move", onMouseMove);
@@ -76,6 +72,9 @@ function addCanvasEventListeners() {
 }
 
 function removeCanvasEventListeners() {
+  console.log('event listeners removed!');
+  disablePaperSettingsBox();
+  disableSettingsBoxForActiveObject();
   canvas.off("mouse:wheel", onMouseWheel);
   canvas.off("mouse:down", onMouseDown);
   canvas.off("mouse:move", onMouseMove);
@@ -93,7 +92,9 @@ main();
 
 // TODO: fix types
 async function loadSnapshotData(loadedData: any) {
-  removeCanvasEventListeners();
+  if (canvas) {
+    removeCanvasEventListeners();
+  }
 
   ppi = loadedData.snapshot.ppi;
   canvas = await canvas.loadFromJSON(loadedData.snapshot.canvasData);
@@ -110,10 +111,19 @@ async function loadSnapshotData(loadedData: any) {
   openedFilename = loadedData.openedFileName;
   console.log(canvas.getObjects());
 
+  setInitialPaperValues();
   addCanvasEventListeners();
 }
 
 async function createNewCanvas() {
+  if (canvas) {
+    await canvas.dispose();
+  }
+
+  canvas = new Canvas("html-canvas", {
+    controlsAboveOverlay: true,
+    renderOnAddRemove: false,
+  });
   ppi = DEFAULT_PPI;
   documentRectangle = new Rect({
     id: BACKGROUND_RECT_ID,
@@ -131,6 +141,10 @@ async function createNewCanvas() {
   canvas.add(documentRectangle);
   canvas.centerObject(documentRectangle);
   canvas.clipPath = documentRectangle;
+
+  openedFilename = null;
+  setInitialPaperValues();
+  addCanvasEventListeners();
 }
 
 function onDocEdit() {
@@ -201,7 +215,7 @@ function redoClone(toClone: Canvas) {
 const paperSettingsButton = document.getElementById("settings");
 paperSettingsButton.addEventListener("click", () => {
   if (paperSettingsBox.hidden) {
-    disableSettingsBoxFor(canvas.getActiveObject());
+    disableSettingsBoxForActiveObject(canvas.getActiveObject());
     enablePaperSettingsBox();
   } else {
     disablePaperSettingsBox();
@@ -243,8 +257,8 @@ const newButton = document.getElementById("new-canvas");
 newButton.addEventListener("click", async () => {
   await window.electronAPI.startNewUnsavedFile();
   removeCanvasEventListeners();
-  createNewCanvas();
-  addCanvasEventListeners();
+  await createNewCanvas();
+  zoomToFitDocument();
   canvas.requestRenderAll();
 });
 
@@ -310,6 +324,7 @@ function onMouseWheel(opt) {
 }
 
 function onObjectAdded({target}) {
+  console.log("object is added")
   enableSettingsBoxFor(target);
 }
 
@@ -318,7 +333,7 @@ function onObjectModified() {
 }
 
 function onObjectRemoved({target}) {
-  disableSettingsBoxFor(target);
+  disableSettingsBoxForActiveObject(target);
   onDocEdit();
 }
 
@@ -359,6 +374,9 @@ const addImageButton = document.getElementById("add-image");
 addImageButton.addEventListener("click", async () => {
   console.log("hi");
   const base64 = await window.electronAPI.openFile();
+  if (!base64) {
+    return; // canceled
+  }
   const url = `data:image/png;base64,${base64}`;
   addImageToCanvas(url);
 });
@@ -587,7 +605,7 @@ function onMouseUp(opt: TPointerEventInfo) {
       opt.target === documentRectangle ||
       !opt.target.selectable)
   ) {
-    disableSettingsBoxFor(opt.target);
+    disableSettingsBoxForActiveObject(opt.target);
   } else if (canvas.getActiveObject()) {
     enableSettingsBoxFor(canvas.getActiveObject());
   }
@@ -739,7 +757,7 @@ function enableSettingsBoxFor(object: FabricObject) {
   settingsBox.hidden = false;
 }
 
-function disableSettingsBoxFor(object: FabricObject) {
+function disableSettingsBoxForActiveObject() {
   activeInputController.abort();
   canvas.discardActiveObject();
   settingsBox.hidden = true;
