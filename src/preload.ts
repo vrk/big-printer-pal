@@ -5,6 +5,8 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('electronAPI', {
   openFile: () => ipcRenderer.invoke('dialog:openFile'),
-  downloadFile: (dataUrl: string) => ipcRenderer.invoke('dialog:downloadFile', dataUrl)
+  downloadFile: (dataUrl: string) => ipcRenderer.invoke('dialog:downloadFile', dataUrl),
+  saveSnapshot: (jsonObject: Object) => ipcRenderer.invoke('autosave:saveSnapshot', jsonObject),
+  loadSnapshot: () => ipcRenderer.invoke('autosave:loadSnapshot')
 })
 

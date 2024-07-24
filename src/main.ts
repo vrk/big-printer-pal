@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Menu, dialog, ipcMain } from "electron";
 import path from "path";
 import fs from "fs";
+import SimpleElectronStore from "./simple-store";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -104,6 +105,7 @@ const template = [
 
 const menu = Menu.buildFromTemplate(template);
 Menu.setApplicationMenu(menu);
+const  store = new SimpleElectronStore();
 
 const createWindow = () => {
   // Create the browser window.
@@ -144,12 +146,24 @@ app.on("window-all-closed", () => {
 app.whenReady().then(() => {
   ipcMain.handle("dialog:openFile", handleFileOpen);
   ipcMain.handle("dialog:downloadFile", handleFileDownload);
+  ipcMain.handle("autosave:saveSnapshot", handleSaveSnapshot);
+  ipcMain.handle("autosave:loadSnapshot", handleLoadSnapshot);
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
 });
+
+const SNAPSHOT_KEY = "__snapshot-key__";
+
+async function handleSaveSnapshot(_: any, dataUrl: Object) {
+  store.set(SNAPSHOT_KEY, dataUrl);
+}
+
+async function handleLoadSnapshot() {
+  return store.get(SNAPSHOT_KEY);
+}
 
 async function handleFileOpen() {
   const result = await dialog.showOpenDialog({

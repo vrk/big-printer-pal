@@ -18,7 +18,7 @@ import { changeDpiDataUrl } from "changedpi";
 
 // TODO: Check out https://codepen.io/janih/pen/EjaNXP for snap to grid
 
-const canvas = new Canvas("html-canvas", {
+let canvas = new Canvas("html-canvas", {
   controlsAboveOverlay: true,
 });
 
@@ -39,28 +39,58 @@ function getPPIRatio() {
 }
 
 const overallContainer = document.getElementById("fabric-canvas-container");
+let doc: FabricObject;
+window.electronAPI.loadSnapshot().then(async (snapshot) => {
+  if (snapshot) {
+    canvas = await canvas.loadFromJSON(snapshot);
+    doc = canvas.getObjects().find(obj => obj.id === BACKGROUND_RECT_ID);
+    console.log(canvas.getObjects())
+  } else {
+    doc = new Rect({
+      id: BACKGROUND_RECT_ID,
+      fill: "white",
+      width: docWidth,
+      height: docHeight,
 
-function getDocStrokeWidth() {
-  return 4 * getPPIRatio();
-}
+      stroke: "#4B624C",
+      strokeWidth: 0,
+      selectable: false,
+      hasControls: false,
+      hoverCursor: "default",
+    });
 
-const doc = new Rect({
-  id: BACKGROUND_RECT_ID,
-  fill: "white",
-  width: docWidth,
-  height: docHeight,
+    canvas.add(doc);
+    canvas.centerObject(doc);
+    canvas.clipPath = doc;
+  }
+  canvas.on('mouse:wheel', onMouseWheel);
+  canvas.on("mouse:down", onMouseDown);
+  canvas.on("mouse:move", onMouseMove);
+  canvas.on("mouse:up", onMouseUp);
+  canvas.on("object:added", ({ target }) => {
+    enableSettingsBoxFor(target);
+  });
 
-  stroke: "#4B624C",
-  strokeWidth: 0,
-  selectable: false,
-  hasControls: false,
-  hoverCursor: "default",
+  canvas.on("object:removed", ({ target }) => {
+    disableSettingsBoxFor(target);
+  });
+
+  canvas.on("object:moving", ({ target }) => {
+    matchInputsToObjectValues(target);
+  });
+
+  setCanvasDimensions();
+  setInitialPaperValues();
 });
 
-canvas.add(doc);
-canvas.centerObject(doc);
-canvas.clipPath = doc;
-setCanvasDimensions();
+let autosaveTimer: NodeJS.Timeout | null = null;
+
+function save() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(function () {
+    window.electronAPI.saveSnapshot(canvas.toObject(['id', 'selectable', 'hasControls', 'hoverCursor']));
+  }, 500);
+}
 
 window.addEventListener("resize", function () {
   setCanvasDimensions();
@@ -184,7 +214,8 @@ function downloadFile(dataUrl: string, filename: string) {
 }
 
 let altKeyPressed = false;
-canvas.on("mouse:wheel", function (opt) {
+  
+function onMouseWheel(opt) {
   opt.e.preventDefault();
   opt.e.stopPropagation();
   requestAnimationFrame(() => {
@@ -213,7 +244,7 @@ canvas.on("mouse:wheel", function (opt) {
       enclose(canvas, doc);
     }
   });
-});
+}
 
 document.addEventListener("keydown", function (event) {
   console.log(event);
@@ -265,6 +296,7 @@ addImageButton.addEventListener("click", async () => {
   canvas.viewportCenterObject(image);
   canvas.setActiveObject(image);
   canvas.bringObjectToFront(image);
+  save();
 });
 
 /******
@@ -274,9 +306,6 @@ addImageButton.addEventListener("click", async () => {
  */
 
 // create Fabric canvas
-canvas.on("mouse:down", onMouseDown);
-canvas.on("mouse:move", onMouseMove);
-canvas.on("mouse:up", onMouseUp);
 
 let isDragging = false;
 let lastPosX: any = null;
@@ -400,18 +429,6 @@ function onMouseUp(opt: TPointerEventInfo) {
   }
 }
 
-canvas.on("object:added", ({ target }) => {
-  enableSettingsBoxFor(target);
-});
-
-canvas.on("object:removed", ({ target }) => {
-  disableSettingsBoxFor(target);
-});
-
-canvas.on("object:moving", ({ target }) => {
-  matchInputsToObjectValues(target);
-});
-
 function matchInputsToObjectValues(object: FabricObject) {
   objectWidthInput.value = getScaledWidthInInches(object);
   objectHeightInput.value = getScaledHeightInInches(object);
@@ -447,11 +464,10 @@ const paperPpiInput = document.getElementById(
   "input-paper-ppi"
 ) as HTMLInputElement;
 
-setInitialPaperValues();
 
 function setInitialPaperValues() {
-  paperPpiInput.value = `${ppi}` ;
-  paperHeightInput.value = `${doc.height / ppi}`
+  paperPpiInput.value = `${ppi}`;
+  paperHeightInput.value = `${doc.height / ppi}`;
   paperWidthInput.value = `${doc.width / ppi}`;
 }
 
