@@ -2,11 +2,13 @@ import "./css/index.css";
 import {
   ActiveSelection,
   Canvas,
+  Group,
   Rect,
   util,
   FabricObject,
   FabricImage,
   Point,
+  Line,
   ImageFormat,
   TPointerEventInfo,
 } from "fabric";
@@ -81,6 +83,10 @@ async function main() {
   window.electronAPI.onRequestSaveCanvas(handleSaveFromMain);
   window.electronAPI.onRequestLoadCanvas(handleLoadFromMain);
 
+  const grid = createGridGroup(documentRectangle);
+  canvas.add(grid);
+  canvas.sendObjectToBack(grid);
+  canvas.sendObjectToBack(documentRectangle);
   canvas.requestRenderAll();
 }
 
@@ -134,6 +140,7 @@ async function loadSnapshotData(loadedData: any) {
   for (const object of editableObjects) {
     setEditableObjectProperties(object);
   }
+
   openedFilename = loadedData.openedFileName;
   fileNameBox.innerHTML = openedFilename;
   saveButton.disabled = true;
@@ -176,9 +183,55 @@ async function createNewCanvas() {
   openedFilename = null;
   fileNameBox.innerHTML = "Untitled";
   saveButton.disabled = true;
+
+
+
   setInitialPaperValues();
   addCanvasEventListeners();
   canvasHistory = new FabricHistory(canvas);
+}
+
+function createGridGroup(rect) {
+  const objects: Array<FabricObject> = [];
+
+  for (let line = 1; line < rect.width / ppi; line++) {
+    const lineObj = new Line([0, 0, 0, DEFAULT_DOC_HEIGHT], {
+      left: line * ppi,
+      stroke: "#D8CDB2",
+      strokeWidth: 0.02 * ppi,
+      selectable: false,
+      excludeFromExport: true,
+      hasControls: false,
+      hasBorders: false,
+      evented: false,
+    });
+    objects.push(lineObj);
+  }
+
+  for (let line = 1; line < rect.height / ppi; line++) {
+    const lineObj = new Line([0, 0, DEFAULT_DOC_WIDTH, 0], {
+      top: line * ppi,
+      stroke: "#D8CDB2",
+      strokeWidth: 0.02 * ppi,
+      hasControls: false,
+      selectable: false,
+      hasBorders: false,
+      evented: false,
+      excludeFromExport: true,
+    });
+    objects.push(lineObj);
+  }
+  const gridGroup = new Group(objects, {
+    left: documentRectangle.left,
+    top: documentRectangle.top,
+    selectable: false,
+      hasBorders: false,
+    evented: false,
+    excludeFromExport: true,
+    hasControls: false,
+  });
+  gridGroup.id = "__grid__";
+  return gridGroup;
 }
 
 function onDocEdit() {
@@ -377,7 +430,31 @@ function onObjectRemoved({ target }) {
 }
 
 function onObjectMoving({ target }) {
+
+  const object = target as FabricObject;
+  const grid = ppi;
+
+  const xDistance = object.left - documentRectangle.left;
+  const yDistance = object.top - documentRectangle.top;
+
+  const withinXRange = xDistance > 0 && xDistance < documentRectangle.width;
+  const withinYRange = yDistance > 0 && yDistance < documentRectangle.height;
+  const insideDocument = withinXRange && withinYRange;
+  console.log(insideDocument);
+
+  if (insideDocument) {
+    // snapping
+    
+
+  }
+
+  // object.set({
+  //   left: Math.round(object.left / grid) * grid,
+  //   top: Math.round(object.top / grid) * grid
+  // });
+
   matchInputsToObjectValues(target);
+  canvas.renderAll();
 }
 
 document.addEventListener("keydown", function (event) {
@@ -392,12 +469,10 @@ document.addEventListener("keydown", function (event) {
 document.addEventListener("keyup", function (event) {
   if (event.key === " ") {
     spacebarPressed = false;
-    if (
-      documentRectangle.containsPoint(lastScenePoint)
-    ) {
+    if (lastScenePoint && documentRectangle.containsPoint(lastScenePoint)) {
       canvas.setCursor("default");
     } else {
-      console.log('nop');
+      console.log("nop");
     }
   } else if (event.key === "Alt" || event.key === "Meta") {
     altKeyPressed = false;
