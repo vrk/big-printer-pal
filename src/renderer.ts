@@ -10,6 +10,7 @@ import {
   TPointerEventInfo,
 } from "fabric";
 import { changeDpiDataUrl } from "changedpi";
+import FabricHistory from "./fabric-history";
 
 // TODO: Check out https://codepen.io/janih/pen/EjaNXP for snap to grid
 
@@ -32,13 +33,21 @@ let documentRectangle: FabricObject;
 let ppi: number;
 
 let openedFilename: string | null = null;
+let canvasHistory: FabricHistory;
+
 
 const overallContainer = document.getElementById("fabric-canvas-container");
 
 const saveButton = document.getElementById("save-canvas") as HTMLButtonElement;
-const zoomInButton = document.getElementById("zoom-in-button") as HTMLButtonElement;
-const zoomOutButton = document.getElementById("zoom-out-button") as HTMLButtonElement;
-const zoomFitButton = document.getElementById("zoom-fit-button") as HTMLButtonElement;
+const zoomInButton = document.getElementById(
+  "zoom-in-button"
+) as HTMLButtonElement;
+const zoomOutButton = document.getElementById(
+  "zoom-out-button"
+) as HTMLButtonElement;
+const zoomFitButton = document.getElementById(
+  "zoom-fit-button"
+) as HTMLButtonElement;
 const fileNameBox = document.getElementById("file-name");
 const paperSettingsBox = document.getElementById("paper-settings-box");
 const paperWidthInput = document.getElementById(
@@ -67,11 +76,12 @@ async function main() {
   window.electronAPI.onRequestSaveCanvas(handleSaveFromMain);
   window.electronAPI.onRequestLoadCanvas(handleLoadFromMain);
 
+  canvasHistory = new FabricHistory(canvas);
   canvas.requestRenderAll();
 }
 
 function addCanvasEventListeners() {
-  console.log('event listeners added!');
+  console.log("event listeners added!");
   canvas.on("mouse:wheel", onMouseWheel);
   canvas.on("mouse:down", onMouseDown);
   canvas.on("mouse:move", onMouseMove);
@@ -83,7 +93,7 @@ function addCanvasEventListeners() {
 }
 
 function removeCanvasEventListeners() {
-  console.log('event listeners removed!');
+  console.log("event listeners removed!");
   disablePaperSettingsBox();
   disableSettingsBoxForActiveObject();
   canvas.off("mouse:wheel", onMouseWheel);
@@ -95,6 +105,10 @@ function removeCanvasEventListeners() {
   canvas.off("object:modified", onObjectModified);
   canvas.off("object:removed", onObjectRemoved);
   canvas.off("object:moving", onObjectMoving);
+
+  if (canvasHistory) {
+    canvasHistory.removeListeners();
+  }
 }
 
 main();
@@ -131,12 +145,16 @@ async function loadSnapshotData(loadedData: any) {
 
 async function createNewCanvas() {
   if (canvas) {
+    if (canvasHistory) {
+      canvasHistory.clearHistory();
+    }
     await canvas.dispose();
   }
 
   canvas = new Canvas("html-canvas", {
     controlsAboveOverlay: true,
     renderOnAddRemove: false,
+    stateful: true
   });
   ppi = DEFAULT_PPI;
   documentRectangle = new Rect({
@@ -157,7 +175,7 @@ async function createNewCanvas() {
   canvas.clipPath = documentRectangle;
 
   openedFilename = null;
-  fileNameBox.innerHTML = 'Untitled';
+  fileNameBox.innerHTML = "Untitled";
   saveButton.disabled = true;
   setInitialPaperValues();
   addCanvasEventListeners();
@@ -165,7 +183,7 @@ async function createNewCanvas() {
 
 function onDocEdit() {
   saveButton.disabled = false;
-  const name = openedFilename ? openedFilename : 'Untitled';
+  const name = openedFilename ? openedFilename : "Untitled";
   fileNameBox.innerHTML = `${name}*`;
   // TODO: Implement:
   // - mark dirty
@@ -185,7 +203,6 @@ function onDocEdit() {
   // }, 500);
 }
 
-
 // From vue-fabric-editor
 function setCenterFromObject(obj: FabricObject) {
   const objCenter = obj.getCenterPoint();
@@ -194,8 +211,9 @@ function setCenterFromObject(obj: FabricObject) {
     canvas.width === undefined ||
     canvas.height === undefined ||
     !viewportTransform
-  )
+  ) {
     return;
+  }
   viewportTransform[4] = canvas.width / 2 - objCenter.x * viewportTransform[0];
   viewportTransform[5] = canvas.height / 2 - objCenter.y * viewportTransform[3];
   canvas.setViewportTransform(viewportTransform);
@@ -240,17 +258,18 @@ function zoomByDelta(delta: number) {
   canvas.requestRenderAll();
 }
 
-zoomInButton.addEventListener('click', onZoomInButtonClicked);
+zoomInButton.addEventListener("click", onZoomInButtonClicked);
 function onZoomInButtonClicked() {
-  zoomByDelta(-100);
+  // zoomByDelta(-100);
+  canvasHistory.undo();
 }
 
-zoomOutButton.addEventListener('click', onZoomOutButtonClicked);
+zoomOutButton.addEventListener("click", onZoomOutButtonClicked);
 function onZoomOutButtonClicked() {
   zoomByDelta(100);
 }
 
-zoomFitButton.addEventListener('click', onZoomFitButtonClicked);
+zoomFitButton.addEventListener("click", onZoomFitButtonClicked);
 function onZoomFitButtonClicked() {
   zoomToFitDocument();
 }
@@ -312,7 +331,7 @@ newButton.addEventListener("click", async () => {
 
 const printButton = document.getElementById("download-to-print");
 printButton.addEventListener("click", async () => {
-  // Clone canvas and remove background rect.
+  // Clone canvas so we can safely much with the view tranform.
   const clonedCanvas = await redoClone(canvas);
   const objects = clonedCanvas.getObjects();
   const object = objects.find((obj) => {
@@ -364,8 +383,8 @@ function onMouseWheel(opt) {
   });
 }
 
-function onObjectAdded({target}) {
-  console.log("object is added")
+function onObjectAdded({ target }) {
+  console.log("object is added");
   enableSettingsBoxFor(target);
 }
 
@@ -373,12 +392,12 @@ function onObjectModified() {
   onDocEdit();
 }
 
-function onObjectRemoved({target}) {
+function onObjectRemoved({ target }) {
   disableSettingsBoxForActiveObject(target);
   onDocEdit();
 }
 
-function onObjectMoving({target}) {
+function onObjectMoving({ target }) {
   matchInputsToObjectValues(target);
 }
 
@@ -535,13 +554,9 @@ async function handleLoadFromMain(loadData) {
   canvas.requestRenderAll();
 }
 
-function renderHorizontalScrollbar() {
+function renderHorizontalScrollbar() {}
 
-}
-
-function renderVerticalScrollbar() {
-
-}
+function renderVerticalScrollbar() {}
 
 /******
  *
@@ -567,21 +582,26 @@ function enclose(canvas: Canvas, object: Rect) {
   const transformedHeightOfObject = Math.abs(bottom - top);
   const transformedWidthOfObject = Math.abs(right - left);
 
-  const yDistanceToMoveBottomOfObjectToTopOfScreen = top + transformedHeightOfObject;
+  const yDistanceToMoveBottomOfObjectToTopOfScreen =
+    top + transformedHeightOfObject;
   const yDistanceToMoveTopOfObjectToBottomOfScreen = top - height;
 
   // Percent of the document that shows when doc is dragged to the edges
   const PERCENT_OF_DOC_TO_PEEK = 0.05;
-  const amountOfVerticalDocToShow = PERCENT_OF_DOC_TO_PEEK * transformedHeightOfObject;
-  const amountOfHorizontalDocToShow = PERCENT_OF_DOC_TO_PEEK * transformedWidthOfObject;
+  const amountOfVerticalDocToShow =
+    PERCENT_OF_DOC_TO_PEEK * transformedHeightOfObject;
+  const amountOfHorizontalDocToShow =
+    PERCENT_OF_DOC_TO_PEEK * transformedWidthOfObject;
 
   let dy = 0;
   const bottomOfDocIsOffscreen = bottom < amountOfVerticalDocToShow;
-  const topOfDocIsOffscreen = top > (height - amountOfVerticalDocToShow);
+  const topOfDocIsOffscreen = top > height - amountOfVerticalDocToShow;
   if (bottomOfDocIsOffscreen) {
-    dy = -yDistanceToMoveBottomOfObjectToTopOfScreen + amountOfVerticalDocToShow;
+    dy =
+      -yDistanceToMoveBottomOfObjectToTopOfScreen + amountOfVerticalDocToShow;
   } else if (topOfDocIsOffscreen) {
-    dy = -yDistanceToMoveTopOfObjectToBottomOfScreen - amountOfVerticalDocToShow;
+    dy =
+      -yDistanceToMoveTopOfObjectToBottomOfScreen - amountOfVerticalDocToShow;
   }
 
   const xDistanceToMoveRightOfObjectToLeftOfScreen = right;
@@ -589,11 +609,13 @@ function enclose(canvas: Canvas, object: Rect) {
 
   let dx = 0;
   const leftOfDocIsOffscreen = right < amountOfHorizontalDocToShow;
-  const rightOfDocIsOffscreen = left > (width - amountOfHorizontalDocToShow);
+  const rightOfDocIsOffscreen = left > width - amountOfHorizontalDocToShow;
   if (leftOfDocIsOffscreen) {
-    dx = -xDistanceToMoveRightOfObjectToLeftOfScreen + amountOfHorizontalDocToShow;
+    dx =
+      -xDistanceToMoveRightOfObjectToLeftOfScreen + amountOfHorizontalDocToShow;
   } else if (rightOfDocIsOffscreen) {
-    dx = xDistanceToMoveLeftOfObjectToRightOfScreen - amountOfHorizontalDocToShow 
+    dx =
+      xDistanceToMoveLeftOfObjectToRightOfScreen - amountOfHorizontalDocToShow;
   }
 
   if (dx || dy) {
@@ -714,7 +736,6 @@ function createImagePreviewSrc(object: FabricObject) {
   );
   return offscreenCanvas.toDataURL();
 }
-
 
 function setInitialPaperValues() {
   paperPpiInput.value = `${ppi}`;
