@@ -227,7 +227,6 @@ function zoomToFitDocument() {
 
 function onWindowResize() {
   setCanvasDimensionsToWindowSize();
-  zoomToFitDocument();
 }
 
 function redoClone(toClone: Canvas) {
