@@ -50,7 +50,7 @@ main {
   align-items: flex-start;
 }
 
-#add-image, #settings, #settings-box, #paper-settings-box{
+#add-image, #settings, #settings-box, #paper-settings-box {
   position: absolute;
   left: 36px;
   display: flex;
@@ -62,10 +62,14 @@ main {
   padding: 18px 28px;
 }
 
-#add-image, #settings-box, #paper-settings-box {
+#add-image, #settings-box, #paper-settings-box,
+.chubbybutton {
   border: 4px solid;
   border-bottom-width: 8px;
   border-radius: 18px;
+}
+
+#add-image, #settings-box, #paper-settings-box {
   width: 225px;
 }
 
@@ -203,6 +207,20 @@ input[type=number] {
 #file-name {
   font-size: 24px;
   font-style: italic;
+}
+
+#zoom-in-button,
+#zoom-fit-button,
+#zoom-out-button {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100px;
+  height: 90px;
+  background-color: #D6F6FF;
+  border-color: #8CC8D9;
+  border-bottom-width: 12px;
+  border-radius: 100px;
 }
 
 [hidden] { display: none !important; }

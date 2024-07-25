@@ -43,6 +43,7 @@ let needsSave = false;
 
 const overallContainer = document.getElementById("fabric-canvas-container");
 
+const saveButton = document.getElementById("save-canvas") as HTMLButtonElement;
 const fileNameBox = document.getElementById("file-name");
 const paperSettingsBox = document.getElementById("paper-settings-box");
 const paperWidthInput = document.getElementById(
@@ -245,7 +246,6 @@ paperSettingsButton.addEventListener("click", () => {
   }
 });
 
-const saveButton = document.getElementById("save-canvas") as HTMLButtonElement;
 saveButton.addEventListener("click", async () => {
   if (!openedFilename) {
     const result = await window.electronAPI.startNewSaveFile();
@@ -341,13 +341,13 @@ function onMouseWheel(opt) {
 
       canvas.requestRenderAll();
     } else {
-      console.log(canvas.viewportTransform);
       // pan up and down
 
       const vpt = this.viewportTransform;
       vpt[5] -= delta;
       canvas.setViewportTransform(vpt);
       enclose(canvas, documentRectangle);
+      canvas.requestRenderAll();
     }
   });
 }
@@ -536,39 +536,55 @@ let lastPosX: any = null;
 let lastPosY: any = null;
 
 function enclose(canvas: Canvas, object: Rect) {
-  console.log("ENCLOSE CALLED");
   const {
     br: brRaw, // bottom right
     tl: tlRaw, // top left
   } = object.aCoords;
+
   const T = canvas.viewportTransform;
   const br = brRaw.transform(T);
   const tl = tlRaw.transform(T);
   const { x: left, y: top } = tl;
   const { x: right, y: bottom } = br;
   const { width, height } = canvas;
-  // const width = overallContainer.offsetWidth;
-  // const height = overallContainer.offsetHeight;
+
   // calculate how far to translate to line up the edge of the object with
   // the edge of the canvas
   const dLeft = Math.abs(right - width);
   const dRight = Math.abs(left);
-  const dUp = Math.abs(bottom - height);
-  const dDown = Math.abs(top);
+  const transformedHeightOfObject = Math.abs(bottom - top);
+
+  const yDistanceToMoveBottomOfObjectToTopOfScreen = top + transformedHeightOfObject;
+  const yDistanceToMoveTopOfObjectToBottomOfScreen = top - height;
+
   // if the object is larger than the canvas, clamp translation such that
   // we don't push the opposite boundary past the edge
   const maxDx = Math.min(dLeft, dRight);
-  const maxDy = Math.min(dUp, dDown);
+
   const leftIsOver = left < 0;
   const rightIsOver = right > width;
+
+  // Percent of the document 
+  const PERCENT_OF_DOC_BOTTOM_TO_SHOW = 0.05;
+  const amountOfDocToShow = PERCENT_OF_DOC_BOTTOM_TO_SHOW * transformedHeightOfObject;
+
+  let dy;
+  const bottomOfDocIsOffscreen = bottom < amountOfDocToShow;
+  const topOfDocIsOffscreen = top > (height - amountOfDocToShow);
+  if (bottomOfDocIsOffscreen) {
+    dy = -yDistanceToMoveBottomOfObjectToTopOfScreen + amountOfDocToShow;
+  } else if (topOfDocIsOffscreen) {
+    dy = -yDistanceToMoveTopOfObjectToBottomOfScreen - amountOfDocToShow;
+  }
+
   const topIsOver = top < 0;
   const bottomIsOver = bottom > height;
+  // const topIsOver = false; 
+  // const bottomIsOver = false; 
   const translateLeft = rightIsOver && !leftIsOver;
   const translateRight = leftIsOver && !rightIsOver;
-  const translateUp = bottomIsOver && !topIsOver;
-  const translateDown = topIsOver && !bottomIsOver;
   const dx = translateLeft ? -maxDx : translateRight ? maxDx : 0;
-  const dy = translateUp ? -maxDy : translateDown ? maxDy : 0;
+
   if (dx || dy) {
     T[4] += dx;
     T[5] += dy;
