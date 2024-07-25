@@ -553,6 +553,7 @@ function enclose(canvas: Canvas, object: Rect) {
   const dLeft = Math.abs(right - width);
   const dRight = Math.abs(left);
   const transformedHeightOfObject = Math.abs(bottom - top);
+  const transformedWidthOfObject = Math.abs(right - left);
 
   const yDistanceToMoveBottomOfObjectToTopOfScreen = top + transformedHeightOfObject;
   const yDistanceToMoveTopOfObjectToBottomOfScreen = top - height;
@@ -564,26 +565,38 @@ function enclose(canvas: Canvas, object: Rect) {
   const leftIsOver = left < 0;
   const rightIsOver = right > width;
 
-  // Percent of the document 
-  const PERCENT_OF_DOC_BOTTOM_TO_SHOW = 0.05;
-  const amountOfDocToShow = PERCENT_OF_DOC_BOTTOM_TO_SHOW * transformedHeightOfObject;
+  // Percent of the document that shows when doc is dragged to the edges
+  const PERCENT_OF_DOC_TO_PEEK = 0.05;
+  const amountOfVerticalDocToShow = PERCENT_OF_DOC_TO_PEEK * transformedHeightOfObject;
+  const amountOfHorizontalDocToShow = PERCENT_OF_DOC_TO_PEEK * transformedWidthOfObject;
 
   let dy = 0;
-  const bottomOfDocIsOffscreen = bottom < amountOfDocToShow;
-  const topOfDocIsOffscreen = top > (height - amountOfDocToShow);
+  const bottomOfDocIsOffscreen = bottom < amountOfVerticalDocToShow;
+  const topOfDocIsOffscreen = top > (height - amountOfVerticalDocToShow);
   if (bottomOfDocIsOffscreen) {
-    dy = -yDistanceToMoveBottomOfObjectToTopOfScreen + amountOfDocToShow;
+    dy = -yDistanceToMoveBottomOfObjectToTopOfScreen + amountOfVerticalDocToShow;
   } else if (topOfDocIsOffscreen) {
-    dy = -yDistanceToMoveTopOfObjectToBottomOfScreen - amountOfDocToShow;
+    dy = -yDistanceToMoveTopOfObjectToBottomOfScreen - amountOfVerticalDocToShow;
   }
 
-  const topIsOver = top < 0;
-  const bottomIsOver = bottom > height;
-  // const topIsOver = false; 
-  // const bottomIsOver = false; 
-  const translateLeft = rightIsOver && !leftIsOver;
-  const translateRight = leftIsOver && !rightIsOver;
-  const dx = translateLeft ? -maxDx : translateRight ? maxDx : 0;
+  const xDistanceToMoveRightOfObjectToLeftOfScreen = right;
+  const xDistanceToMoveLeftOfObjectToRightOfScreen = width - left;
+
+  let dx = 0;
+  console.log('left', left, 'right', right);
+  const leftOfDocIsOffscreen = right < amountOfHorizontalDocToShow;
+  const rightOfDocIsOffscreen = left > (width - amountOfHorizontalDocToShow);
+  if (leftOfDocIsOffscreen) {
+    console.log('LEFT IS OFFSCREEN');
+    dx = -xDistanceToMoveRightOfObjectToLeftOfScreen + amountOfHorizontalDocToShow;
+  } else if (rightOfDocIsOffscreen) {
+    console.log('RIGHT IS OFFSCREEN');
+    dx = xDistanceToMoveLeftOfObjectToRightOfScreen - amountOfHorizontalDocToShow 
+  }
+
+  // const translateLeft = rightIsOver && !leftIsOver;
+  // const translateRight = leftIsOver && !rightIsOver;
+  // dx = translateLeft ? -maxDx : translateRight ? maxDx : 0;
 
   if (dx || dy) {
     T[4] += dx;
