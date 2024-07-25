@@ -77,7 +77,6 @@ async function main() {
   window.electronAPI.onRequestSaveCanvas(handleSaveFromMain);
   window.electronAPI.onRequestLoadCanvas(handleLoadFromMain);
 
-  canvasHistory = new FabricHistory(canvas);
   canvas.requestRenderAll();
 }
 
@@ -142,6 +141,7 @@ async function loadSnapshotData(loadedData: any) {
 
   setInitialPaperValues();
   addCanvasEventListeners();
+  canvasHistory = new FabricHistory(canvas);
 }
 
 async function createNewCanvas() {
@@ -180,6 +180,7 @@ async function createNewCanvas() {
   saveButton.disabled = true;
   setInitialPaperValues();
   addCanvasEventListeners();
+  canvasHistory = new FabricHistory(canvas);
 }
 
 function onDocEdit() {
@@ -446,7 +447,6 @@ async function addImageToCanvas(dataUrl) {
 }
 
 function setEditableObjectProperties(object: FabricObject) {
-
   // TODO: UGH hack
   if (!object.id) {
     object.id = uuidv4();
@@ -902,6 +902,7 @@ function setObjectX(object: FabricObject, newXInput: string) {
     if (value) {
       console.log("value is", value);
       object.setX(value);
+      object.setCoords();
       canvas.requestRenderAll();
     }
   } catch (e) {
@@ -917,6 +918,7 @@ function setObjectY(object: FabricObject, newYInput: string) {
     if (value) {
       console.log("value is", value);
       object.setY(value);
+      object.setCoords();
       canvas.requestRenderAll();
     }
   } catch (e) {

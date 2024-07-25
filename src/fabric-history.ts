@@ -97,6 +97,7 @@ class FabricHistory {
   }
 
   async redo() {
+    this.canvas.discardActiveObject();
     if (this.historyRedo.length === 0) {
       return;
     }
@@ -119,6 +120,7 @@ class FabricHistory {
           type: 'addObject',
           objectID: restoredObject.id
         });
+        setEditableObjectProperties(restoredObject);
         this.canvas.add(restoredObject);
         break;
       case "removeObject": {
@@ -155,6 +157,7 @@ class FabricHistory {
         for (const entry of Object.entries(actionToRedo.previousProperties)) {
           const [key, value] = entry;
           found.set(key, value)
+          found.setCoords();
         }
         break;
       }case "changePPI":
@@ -166,6 +169,7 @@ class FabricHistory {
   }
 
   async undo() {
+    this.canvas.discardActiveObject();
     console.log(this.canvas.getObjects())
     if (this.historyUndo.length === 0) {
       return;
@@ -202,6 +206,7 @@ class FabricHistory {
           type: 'removeObject',
           objectID: restoredObject.id
         });
+        setEditableObjectProperties(restoredObject);
         this.canvas.add(restoredObject);
         break;
       case "modifyObject": {
@@ -224,6 +229,7 @@ class FabricHistory {
         for (const entry of Object.entries(actionToUndo.previousProperties)) {
           const [key, value] = entry;
           found.set(key, value)
+          found.setCoords();
         }
         break;
       } case "changePPI":
@@ -235,4 +241,21 @@ class FabricHistory {
   
 }
 
+
+// TODO: CONSOLIDATE
+
+function setEditableObjectProperties(object: FabricObject) {
+  console.log('EDITABLEPROPERTIES')
+  object.set({
+    transparentCorners: false,
+    selectable: true,
+  });
+  object.setControlsVisibility({
+    mt: false, // middle top disable
+    mb: false, // midle bottom
+    ml: false, // middle left
+    mr: false,
+  });
+  object.snapAngle = 5;
+}
 export default FabricHistory;
