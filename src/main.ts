@@ -58,8 +58,20 @@ function buildMenu(mainWindow) {
     {
       label: "Edit",
       submenu: [
-        { role: "undo" },
-        { role: "redo" },
+        {
+          label: "Undo",
+          accelerator: "CommandOrControl+Z",
+          click: () => {
+            mainWindow.webContents.send('system:local-undo');
+          },
+        },
+        {
+          label: "Redo",
+          accelerator: "Shift+CommandOrControl+Z",
+          click: () => {
+            mainWindow.webContents.send('system:local-redo');
+          },
+        },
         { type: "separator" },
         { role: "cut" },
         {

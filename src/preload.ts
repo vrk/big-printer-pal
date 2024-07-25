@@ -15,6 +15,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   onLocalCopy: (callback: Function) => ipcRenderer.on('system:local-copy', (_event, value) => callback(value)),
   onRequestSaveCanvas: (callback: Function) => ipcRenderer.on('system:save-canvas', (_event, value) => callback(value)),
-  onRequestLoadCanvas: (callback: Function) => ipcRenderer.on('system:load-canvas', (_event, value) => callback(value))
+  onRequestLoadCanvas: (callback: Function) => ipcRenderer.on('system:load-canvas', (_event, value) => callback(value)),
+  onLocalUndo: (callback: Function) => ipcRenderer.on('system:local-undo', (_event, value) => callback(value)),
+  onLocalRedo: (callback: Function) => ipcRenderer.on('system:local-redo', (_event, value) => callback(value)),
 })
 

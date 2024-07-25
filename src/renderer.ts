@@ -74,6 +74,8 @@ async function main() {
   window.addEventListener("resize", onWindowResize);
   document.addEventListener("paste", onPaste);
   window.electronAPI.onLocalCopy(handleLocalCopy);
+  window.electronAPI.onLocalUndo(handleLocalUndo);
+  window.electronAPI.onLocalRedo(handleLocalRedo);
   window.electronAPI.onRequestSaveCanvas(handleSaveFromMain);
   window.electronAPI.onRequestLoadCanvas(handleLoadFromMain);
 
@@ -261,8 +263,7 @@ function zoomByDelta(delta: number) {
 
 zoomInButton.addEventListener("click", onZoomInButtonClicked);
 function onZoomInButtonClicked() {
-  // zoomByDelta(-100);
-  canvasHistory.undo();
+  zoomByDelta(-100);
 }
 
 zoomOutButton.addEventListener("click", onZoomOutButtonClicked);
@@ -272,8 +273,7 @@ function onZoomOutButtonClicked() {
 
 zoomFitButton.addEventListener("click", onZoomFitButtonClicked);
 function onZoomFitButtonClicked() {
-  // zoomToFitDocument();
-  canvasHistory.redo();
+  zoomToFitDocument();
 }
 
 const paperSettingsButton = document.getElementById("settings");
@@ -541,6 +541,14 @@ function handleLocalCopy() {
   delete copy.id;
   const objectAsJson = JSON.stringify(copy);
   return navigator.clipboard.writeText(objectAsJson);
+}
+
+function handleLocalUndo() {
+  canvasHistory.undo();
+}
+
+function handleLocalRedo() {
+  canvasHistory.redo();
 }
 
 async function handleSaveFromMain(fileName) {
