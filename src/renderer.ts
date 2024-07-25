@@ -11,6 +11,7 @@ import {
 } from "fabric";
 import { changeDpiDataUrl } from "changedpi";
 import FabricHistory from "./fabric-history";
+import { v4 as uuidv4 } from 'uuid';
 
 // TODO: Check out https://codepen.io/janih/pen/EjaNXP for snap to grid
 
@@ -271,7 +272,8 @@ function onZoomOutButtonClicked() {
 
 zoomFitButton.addEventListener("click", onZoomFitButtonClicked);
 function onZoomFitButtonClicked() {
-  zoomToFitDocument();
+  // zoomToFitDocument();
+  canvasHistory.redo();
 }
 
 const paperSettingsButton = document.getElementById("settings");
@@ -354,11 +356,8 @@ printButton.addEventListener("click", async () => {
     top,
     multiplier: 1,
   };
-  console.log("data url start", performance.now());
   const dataUrl = clonedCanvas.toDataURL(options);
-  console.log("data url finished", performance.now());
   const dataUrlAdjustedDPI = changeDpiDataUrl(dataUrl, ppi);
-  console.log("change dpi finished", performance.now());
   await window.electronAPI.downloadFile(dataUrlAdjustedDPI);
 });
 
@@ -447,6 +446,13 @@ async function addImageToCanvas(dataUrl) {
 }
 
 function setEditableObjectProperties(object: FabricObject) {
+
+  // TODO: UGH hack
+  if (!object.id) {
+    object.id = uuidv4();
+  }
+
+
   object.set({
     transparentCorners: false,
     selectable: true,
@@ -528,9 +534,12 @@ function handleLocalCopy() {
   if (!activeObject) {
     return;
   }
-  const objectAsJson = JSON.stringify(
+  // TODO ugh hack
+
+  const copy = 
     activeObject.toObject(PROPERTIES_TO_INCLUDE)
-  );
+  delete copy.id;
+  const objectAsJson = JSON.stringify(copy);
   return navigator.clipboard.writeText(objectAsJson);
 }
 

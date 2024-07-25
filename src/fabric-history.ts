@@ -7,8 +7,8 @@ type HistoryAction = {
 
   // TODO do this better
 
-  /** Reference to the live object. Used for addObject and modifyObject. */
-  objectReference?: FabricObject;
+  /** The ID of the object this refers to. Used for addObject and modifyObject. */
+  objectID?: string;
 
   /** Copy of the newly delete object. Used for removeObject. */
   objectDeepCopy?: string;
@@ -49,17 +49,19 @@ class FabricHistory {
 
   private historySaveAddObject(objectEvent: any) {
     if (this.historyProcessing) return;
+    this.historyRedo = [];
 
     // TODO: handle multi select
     const action: HistoryAction = {
       type: 'addObject',
-      objectReference: objectEvent.target
+      objectID: objectEvent.target.id
     }
     this.historyUndo.push(action);
   }
 
   private historySaveRemoveObject(objectEvent: any) {
     if (this.historyProcessing) return;
+    this.historyRedo = [];
     const object = objectEvent.target as FabricObject;
 
     const action: HistoryAction = {
@@ -71,12 +73,13 @@ class FabricHistory {
 
   private historyModifyObjection(objectEvent: any) {
     if (this.historyProcessing) return;
+    this.historyRedo = [];
     console.log(objectEvent);
     const transform = objectEvent.transform as Transform;
 
     const action: HistoryAction = {
       type: 'modifyObject',
-      objectReference: objectEvent.target,
+      objectID: objectEvent.target.id,
       previousProperties: {
         ...transform.original
       }
@@ -98,24 +101,72 @@ class FabricHistory {
       return;
     }
 
-    const stateToRestoreTo = this.historyRedo.pop();
-    this.historyUndo.push(stateToRestoreTo);
+    const actionToRedo  = this.historyRedo.pop();
 
     // And then redo that last action
     this.historyProcessing = true;
-    switch(stateToRestoreTo.type) {
+    switch(actionToRedo.type) {
       case "addObject":
+        // redo add object -> add
+        if (!actionToRedo.objectDeepCopy) {
+          console.error('could not redo action', actionToRedo);
+          return;
+        }
+        const [ object ] = await util.enlivenObjects([JSON.parse(actionToRedo.objectDeepCopy)]);
+        const restoredObject = object as FabricObject;
+    
+        this.historyUndo.push({
+          type: 'addObject',
+          objectID: restoredObject.id
+        });
+        this.canvas.add(restoredObject);
+        break;
+      case "removeObject": {
+        // redo remove object -> remove
+        if (!actionToRedo.objectID) {
+          console.error('could not redo action', actionToRedo);
+          return;
+        }
+        const found = this.canvas.getObjects().find((o) => { return o.id === actionToRedo.objectID})
+        this.historyUndo.push({
+          type: 'removeObject',
+          objectDeepCopy: JSON.stringify(found.toObject(PROPERTIES_TO_INCLUDE))
+        })
+        this.canvas.remove(found);
+        break;
 
-      case "removeObject":
-      case "modifyObject":
-      case "changePPI":
+      }
+      case "modifyObject": {
+        if (!actionToRedo.objectID || !actionToRedo.previousProperties) {
+          console.error('could not redo action', actionToRedo);
+          return;
+        }
+        const currentProperties: any = {};
+        const found = this.canvas.getObjects().find((o) => { return o.id === actionToRedo.objectID})
+        for (const entry of Object.entries(actionToRedo.previousProperties)) {
+          const [key] = entry;
+          currentProperties[key] = found.get(key)
+        }
+        this.historyUndo.push({
+          type: 'modifyObject',
+          objectID: actionToRedo.objectID,
+          previousProperties: currentProperties
+        })
+        for (const entry of Object.entries(actionToRedo.previousProperties)) {
+          const [key, value] = entry;
+          found.set(key, value)
+        }
+        break;
+      }case "changePPI":
         return;
     }
 
+    this.canvas.requestRenderAll();
     this.historyProcessing = false;
   }
 
   async undo() {
+    console.log(this.canvas.getObjects())
     if (this.historyUndo.length === 0) {
       return;
     }
@@ -123,18 +174,20 @@ class FabricHistory {
 
     this.historyProcessing = true;
 
+        console.log('undo', actionToUndo)
     switch (actionToUndo.type) {
       case "addObject":
         // undo add object -> remove
-        if (!actionToUndo.objectReference) {
+        if (!actionToUndo.objectID) {
           console.error('could not undo action', actionToUndo);
           return;
         }
+        const found = this.canvas.getObjects().find((o) => { return o.id === actionToUndo.objectID})
         this.historyRedo.push({
           type: 'addObject',
-          objectDeepCopy: JSON.stringify(actionToUndo.objectReference.toObject(PROPERTIES_TO_INCLUDE))
+          objectDeepCopy: JSON.stringify(found.toObject(PROPERTIES_TO_INCLUDE))
         })
-        this.canvas.remove(actionToUndo.objectReference);
+        this.canvas.remove(found);
         break;
       case "removeObject":
         // undo remove object -> add
@@ -142,36 +195,38 @@ class FabricHistory {
           console.error('could not undo action', actionToUndo);
           return;
         }
-        // const objectDeepCopy = JSON.parse(actionToUndo.objectDeepCopy) as FabricObject
         const [ object ] = await util.enlivenObjects([JSON.parse(actionToUndo.objectDeepCopy)]);
         const restoredObject = object as FabricObject;
     
         this.historyRedo.push({
           type: 'removeObject',
-          objectReference: restoredObject
+          objectID: restoredObject.id
         });
         this.canvas.add(restoredObject);
         break;
-      case "modifyObject":
-        if (!actionToUndo.objectReference || !actionToUndo.previousProperties) {
+      case "modifyObject": {
+        if (!actionToUndo.objectID || !actionToUndo.previousProperties) {
           console.error('could not undo action', actionToUndo);
           return;
         }
+        const found = this.canvas.getObjects().find((o) => { return o.id === actionToUndo.objectID})
+        console.log(found);
         const currentProperties: any = {};
         for (const entry of Object.entries(actionToUndo.previousProperties)) {
           const [key] = entry;
-          currentProperties[key] = actionToUndo.objectReference.get(key)
+          currentProperties[key] = found.get(key)
         }
         this.historyRedo.push({
           type: 'modifyObject',
+          objectID: actionToUndo.objectID,
           previousProperties: currentProperties
         })
         for (const entry of Object.entries(actionToUndo.previousProperties)) {
           const [key, value] = entry;
-          actionToUndo.objectReference.set(key, value)
+          found.set(key, value)
         }
         break;
-      case "changePPI":
+      } case "changePPI":
         break;
     }
     this.historyProcessing = false;
