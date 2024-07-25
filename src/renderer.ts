@@ -392,6 +392,7 @@ function onObjectAdded({ target }) {
 }
 
 function onObjectModified() {
+  console.log('here modified');
   onDocEdit();
 }
 

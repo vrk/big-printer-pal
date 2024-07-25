@@ -88,6 +88,7 @@ class FabricHistory {
 
   private historyModifyObject(objectEvent: any) {
     if (this.historyProcessing) return;
+    console.log('modify object');
     this.historyRedo = [];
     const transform = objectEvent.transform as Transform;
 

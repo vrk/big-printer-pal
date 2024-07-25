@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, dialog, ipcMain } from "electron";
+import { app, BrowserWindow, Menu, dialog, ipcMain, webContents } from "electron";
 import path from "path";
 import fs from "fs";
 import SimpleElectronStore from "./simple-store";
@@ -62,6 +62,7 @@ function buildMenu(mainWindow) {
           label: "Undo",
           accelerator: "CommandOrControl+Z",
           click: () => {
+            mainWindow.webContents.undo();
             mainWindow.webContents.send('system:local-undo');
           },
         },
@@ -69,6 +70,7 @@ function buildMenu(mainWindow) {
           label: "Redo",
           accelerator: "Shift+CommandOrControl+Z",
           click: () => {
+            mainWindow.webContents.redo();
             mainWindow.webContents.send('system:local-redo');
           },
         },
