@@ -164,7 +164,6 @@ async function createNewCanvas() {
 }
 
 function onDocEdit() {
-  needsSave = true;
   saveButton.disabled = false;
   const name = openedFilename ? openedFilename : 'Untitled';
   fileNameBox.innerHTML = `${name}*`;
