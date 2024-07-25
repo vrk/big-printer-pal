@@ -1,6 +1,17 @@
-import { Canvas, BasicTransformEvent, Transform, util, FabricObject} from "fabric";
+import {
+  Canvas,
+  ActiveSelection,
+  BasicTransformEvent,
+  Transform,
+  util,
+  FabricObject,
+} from "fabric";
 
-type ModificationType = 'addObject' | 'removeObject' | 'modifyObject' | 'changePPI';
+type ModificationType =
+  | "addObject"
+  | "removeObject"
+  | "modifyObject"
+  | "changePPI";
 
 type HistoryAction = {
   type: ModificationType;
@@ -10,13 +21,15 @@ type HistoryAction = {
   /** The ID of the object this refers to. Used for addObject and modifyObject. */
   objectID?: string;
 
+  // Used for group selection and deletion
+  objectIDs?: Array<string>;
+
   /** Copy of the newly delete object. Used for removeObject. */
   objectDeepCopy?: string;
 
   /** Copy of the properties it used to have before the modification. Used for modifyObject */
   previousProperties?: any;
-
-}
+};
 
 const PROPERTIES_TO_INCLUDE = [
   "id",
@@ -30,7 +43,9 @@ class FabricHistory {
   private historyRedo: Array<HistoryAction> = [];
   private historyProcessing = false;
   private canvas: Canvas;
-  private static get EXTRA_PROPS():Array<string> { return ['selectable', 'editable'] }
+  private static get EXTRA_PROPS(): Array<string> {
+    return ["selectable", "editable"];
+  }
   constructor(canvas: Canvas) {
     this.canvas = canvas;
     this.canvas.on(this.getHistoryEvents());
@@ -48,14 +63,14 @@ class FabricHistory {
   }
 
   private historySaveAddObject(objectEvent: any) {
+    console.log("add", objectEvent);
     if (this.historyProcessing) return;
     this.historyRedo = [];
 
-    // TODO: handle multi select
     const action: HistoryAction = {
-      type: 'addObject',
-      objectID: objectEvent.target.id
-    }
+      type: "addObject",
+      objectID: objectEvent.target.id,
+    };
     this.historyUndo.push(action);
   }
 
@@ -65,60 +80,73 @@ class FabricHistory {
     const object = objectEvent.target as FabricObject;
 
     const action: HistoryAction = {
-      type: 'removeObject',
-      objectDeepCopy: JSON.stringify(object.toObject(PROPERTIES_TO_INCLUDE))
-    }
+      type: "removeObject",
+      objectDeepCopy: JSON.stringify(object.toObject(PROPERTIES_TO_INCLUDE)),
+    };
     this.historyUndo.push(action);
   }
 
-  private historyModifyObjection(objectEvent: any) {
+  private historyModifyObject(objectEvent: any) {
     if (this.historyProcessing) return;
     this.historyRedo = [];
-    console.log(objectEvent);
     const transform = objectEvent.transform as Transform;
 
+    if (!objectEvent.target.id && objectEvent.target.getObjects) {
+      // We have a selection
+      const ids = objectEvent.target.getObjects().map((o: any) => { return o.id })
+      const action: HistoryAction = {
+        type: "modifyObject",
+        objectIDs: ids,
+        previousProperties: {
+          ...transform.original,
+        },
+      };
+      this.historyUndo.push(action);
+      return;
+    }
     const action: HistoryAction = {
-      type: 'modifyObject',
+      type: "modifyObject",
       objectID: objectEvent.target.id,
       previousProperties: {
-        ...transform.original
-      }
-    }
+        ...transform.original,
+      },
+    };
 
     this.historyUndo.push(action);
   }
 
-  private getHistoryEvents():Object {
+  private getHistoryEvents(): Object {
     return {
-      'object:added': (e: any) => this.historySaveAddObject(e),
-      'object:removed': (e: any) => this.historySaveRemoveObject(e),
-      'object:modified': (e: any) => this.historyModifyObjection(e),
+      "object:added": (e: any) => this.historySaveAddObject(e),
+      "object:removed": (e: any) => this.historySaveRemoveObject(e),
+      "object:modified": (e: any) => this.historyModifyObject(e),
     };
   }
 
   async redo() {
-    this.canvas.discardActiveObject();
     if (this.historyRedo.length === 0) {
       return;
     }
 
-    const actionToRedo  = this.historyRedo.pop();
+    const actionToRedo = this.historyRedo.pop();
 
     // And then redo that last action
     this.historyProcessing = true;
-    switch(actionToRedo.type) {
+    switch (actionToRedo.type) {
       case "addObject":
         // redo add object -> add
         if (!actionToRedo.objectDeepCopy) {
-          console.error('could not redo action', actionToRedo);
+          console.error("could not redo action", actionToRedo);
           return;
         }
-        const [ object ] = await util.enlivenObjects([JSON.parse(actionToRedo.objectDeepCopy)]);
+        const [object] = await util.enlivenObjects([
+          JSON.parse(actionToRedo.objectDeepCopy),
+        ]);
         const restoredObject = object as FabricObject;
-    
+
         this.historyUndo.push({
-          type: 'addObject',
-          objectID: restoredObject.id
+          type: "addObject",
+          objectID: restoredObject.id,
         });
         setEditableObjectProperties(restoredObject);
         this.canvas.add(restoredObject);
@@ -126,41 +154,55 @@ class FabricHistory {
       case "removeObject": {
         // redo remove object -> remove
         if (!actionToRedo.objectID) {
-          console.error('could not redo action', actionToRedo);
+          console.error("could not redo action", actionToRedo);
           return;
         }
-        const found = this.canvas.getObjects().find((o) => { return o.id === actionToRedo.objectID})
+        const found = this.canvas.getObjects().find((o) => {
+          return o.id === actionToRedo.objectID;
+        });
         this.historyUndo.push({
-          type: 'removeObject',
-          objectDeepCopy: JSON.stringify(found.toObject(PROPERTIES_TO_INCLUDE))
-        })
+          type: "removeObject",
+          objectDeepCopy: JSON.stringify(found.toObject(PROPERTIES_TO_INCLUDE)),
+        });
         this.canvas.remove(found);
         break;
-
       }
       case "modifyObject": {
-        if (!actionToRedo.objectID || !actionToRedo.previousProperties) {
-          console.error('could not redo action', actionToRedo);
+        if ((!actionToRedo.objectID && !actionToRedo.objectIDs) || !actionToRedo.previousProperties) {
+          console.error("could not redo action", actionToRedo);
           return;
         }
         const currentProperties: any = {};
-        const found = this.canvas.getObjects().find((o) => { return o.id === actionToRedo.objectID})
+        let found;
+        if (actionToRedo.objectIDs) {
+          const objects = this.canvas.getObjects().filter(o => {
+            return actionToRedo.objectIDs.includes(o.id)
+          });
+          found = new ActiveSelection(objects);
+          this.canvas.setActiveObject(found);
+        } else {
+          found = this.canvas.getObjects().find((o) => {
+            return o.id === actionToRedo.objectID;
+          });
+        }
         for (const entry of Object.entries(actionToRedo.previousProperties)) {
           const [key] = entry;
-          currentProperties[key] = found.get(key)
+          currentProperties[key] = found.get(key);
         }
         this.historyUndo.push({
-          type: 'modifyObject',
+          type: "modifyObject",
+          objectIDs: actionToRedo.objectIDs,
           objectID: actionToRedo.objectID,
-          previousProperties: currentProperties
-        })
+          previousProperties: currentProperties,
+        });
         for (const entry of Object.entries(actionToRedo.previousProperties)) {
           const [key, value] = entry;
-          found.set(key, value)
+          found.set(key, value);
           found.setCoords();
         }
         break;
-      }case "changePPI":
+      }
+      case "changePPI":
         return;
     }
 
@@ -169,8 +211,7 @@ class FabricHistory {
   }
 
   async undo() {
-    this.canvas.discardActiveObject();
-    console.log(this.canvas.getObjects())
+    console.log(this.canvas.getObjects());
     if (this.historyUndo.length === 0) {
       return;
     }
@@ -178,74 +219,88 @@ class FabricHistory {
 
     this.historyProcessing = true;
 
-        console.log('undo', actionToUndo)
+    console.log("undo", actionToUndo);
     switch (actionToUndo.type) {
       case "addObject":
         // undo add object -> remove
         if (!actionToUndo.objectID) {
-          console.error('could not undo action', actionToUndo);
+          console.error("could not undo action", actionToUndo);
           return;
         }
-        const found = this.canvas.getObjects().find((o) => { return o.id === actionToUndo.objectID})
+        const found = this.canvas.getObjects().find((o) => {
+          return o.id === actionToUndo.objectID;
+        });
         this.historyRedo.push({
-          type: 'addObject',
-          objectDeepCopy: JSON.stringify(found.toObject(PROPERTIES_TO_INCLUDE))
-        })
+          type: "addObject",
+          objectDeepCopy: JSON.stringify(found.toObject(PROPERTIES_TO_INCLUDE)),
+        });
         this.canvas.remove(found);
         break;
       case "removeObject":
         // undo remove object -> add
         if (!actionToUndo.objectDeepCopy) {
-          console.error('could not undo action', actionToUndo);
+          console.error("could not undo action", actionToUndo);
           return;
         }
-        const [ object ] = await util.enlivenObjects([JSON.parse(actionToUndo.objectDeepCopy)]);
+        const [object] = await util.enlivenObjects([
+          JSON.parse(actionToUndo.objectDeepCopy),
+        ]);
         const restoredObject = object as FabricObject;
-    
+
         this.historyRedo.push({
-          type: 'removeObject',
-          objectID: restoredObject.id
+          type: "removeObject",
+          objectID: restoredObject.id,
         });
         setEditableObjectProperties(restoredObject);
         this.canvas.add(restoredObject);
         break;
       case "modifyObject": {
-        if (!actionToUndo.objectID || !actionToUndo.previousProperties) {
-          console.error('could not undo action', actionToUndo);
+        if ((!actionToUndo.objectID && !actionToUndo.objectIDs) || !actionToUndo.previousProperties) {
+          console.error("could not undo action", actionToUndo);
           return;
         }
-        const found = this.canvas.getObjects().find((o) => { return o.id === actionToUndo.objectID})
-        console.log(found);
+        let found;
+        if (actionToUndo.objectIDs) {
+          const objects = this.canvas.getObjects().filter(o => {
+            return actionToUndo.objectIDs.includes(o.id)
+          });
+          found = new ActiveSelection(objects);
+          this.canvas.setActiveObject(found);
+        } else {
+          found = this.canvas.getObjects().find((o) => {
+            return o.id === actionToUndo.objectID;
+          });
+        }
         const currentProperties: any = {};
         for (const entry of Object.entries(actionToUndo.previousProperties)) {
           const [key] = entry;
-          currentProperties[key] = found.get(key)
+          currentProperties[key] = found.get(key);
         }
         this.historyRedo.push({
-          type: 'modifyObject',
+          type: "modifyObject",
           objectID: actionToUndo.objectID,
-          previousProperties: currentProperties
-        })
+          objectIDs: actionToUndo.objectIDs,
+          previousProperties: currentProperties,
+        });
         for (const entry of Object.entries(actionToUndo.previousProperties)) {
           const [key, value] = entry;
-          found.set(key, value)
+          found.set(key, value);
           found.setCoords();
         }
         break;
-      } case "changePPI":
+      }
+      case "changePPI":
         break;
     }
     this.historyProcessing = false;
     this.canvas.requestRenderAll();
   }
-  
 }
-
 
 // TODO: CONSOLIDATE
 
 function setEditableObjectProperties(object: FabricObject) {
-  console.log('EDITABLEPROPERTIES')
+  console.log("EDITABLEPROPERTIES");
   object.set({
     transparentCorners: false,
     selectable: true,

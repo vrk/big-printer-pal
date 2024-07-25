@@ -154,8 +154,7 @@ async function createNewCanvas() {
 
   canvas = new Canvas("html-canvas", {
     controlsAboveOverlay: true,
-    renderOnAddRemove: false,
-    stateful: true
+    renderOnAddRemove: false
   });
   ppi = DEFAULT_PPI;
   documentRectangle = new Rect({
@@ -385,6 +384,7 @@ function onMouseWheel(opt) {
 
 function onObjectAdded({ target }) {
   console.log("object is added");
+  canvas.setActiveObject(target);
   enableSettingsBoxFor(target);
 }
 
