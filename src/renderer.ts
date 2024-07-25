@@ -568,7 +568,7 @@ function enclose(canvas: Canvas, object: Rect) {
   const PERCENT_OF_DOC_BOTTOM_TO_SHOW = 0.05;
   const amountOfDocToShow = PERCENT_OF_DOC_BOTTOM_TO_SHOW * transformedHeightOfObject;
 
-  let dy;
+  let dy = 0;
   const bottomOfDocIsOffscreen = bottom < amountOfDocToShow;
   const topOfDocIsOffscreen = top > (height - amountOfDocToShow);
   if (bottomOfDocIsOffscreen) {
