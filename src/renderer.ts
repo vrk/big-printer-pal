@@ -227,6 +227,7 @@ function zoomToFitDocument() {
 
 function onWindowResize() {
   setCanvasDimensionsToWindowSize();
+  setCenterFromObject(documentRectangle);
 }
 
 function redoClone(toClone: Canvas) {
@@ -522,17 +523,19 @@ async function handleLoadFromMain(loadData) {
   canvas.requestRenderAll();
 }
 
+function renderHorizontalScrollbar() {
+
+}
+
+function renderVerticalScrollbar() {
+
+}
+
 /******
  *
  *
- * from https://github.com/fabricjs/fabric.js/discussions/7052
+ * adapted from https://github.com/fabricjs/fabric.js/discussions/7052
  */
-
-// create Fabric canvas
-
-let isDragging = false;
-let lastPosX: any = null;
-let lastPosY: any = null;
 
 function enclose(canvas: Canvas, object: Rect) {
   const {
@@ -549,20 +552,11 @@ function enclose(canvas: Canvas, object: Rect) {
 
   // calculate how far to translate to line up the edge of the object with
   // the edge of the canvas
-  const dLeft = Math.abs(right - width);
-  const dRight = Math.abs(left);
   const transformedHeightOfObject = Math.abs(bottom - top);
   const transformedWidthOfObject = Math.abs(right - left);
 
   const yDistanceToMoveBottomOfObjectToTopOfScreen = top + transformedHeightOfObject;
   const yDistanceToMoveTopOfObjectToBottomOfScreen = top - height;
-
-  // if the object is larger than the canvas, clamp translation such that
-  // we don't push the opposite boundary past the edge
-  const maxDx = Math.min(dLeft, dRight);
-
-  const leftIsOver = left < 0;
-  const rightIsOver = right > width;
 
   // Percent of the document that shows when doc is dragged to the edges
   const PERCENT_OF_DOC_TO_PEEK = 0.05;
@@ -582,20 +576,13 @@ function enclose(canvas: Canvas, object: Rect) {
   const xDistanceToMoveLeftOfObjectToRightOfScreen = width - left;
 
   let dx = 0;
-  console.log('left', left, 'right', right);
   const leftOfDocIsOffscreen = right < amountOfHorizontalDocToShow;
   const rightOfDocIsOffscreen = left > (width - amountOfHorizontalDocToShow);
   if (leftOfDocIsOffscreen) {
-    console.log('LEFT IS OFFSCREEN');
     dx = -xDistanceToMoveRightOfObjectToLeftOfScreen + amountOfHorizontalDocToShow;
   } else if (rightOfDocIsOffscreen) {
-    console.log('RIGHT IS OFFSCREEN');
     dx = xDistanceToMoveLeftOfObjectToRightOfScreen - amountOfHorizontalDocToShow 
   }
-
-  // const translateLeft = rightIsOver && !leftIsOver;
-  // const translateRight = leftIsOver && !rightIsOver;
-  // dx = translateLeft ? -maxDx : translateRight ? maxDx : 0;
 
   if (dx || dy) {
     T[4] += dx;
@@ -612,6 +599,10 @@ function getClientPosition(e) {
     clientY,
   };
 }
+
+let isDragging = false;
+let lastPosX: any = null;
+let lastPosY: any = null;
 
 function onMouseDown(opt: TPointerEventInfo) {
   disablePaperSettingsBox();

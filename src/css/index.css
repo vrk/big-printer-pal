@@ -69,14 +69,23 @@ main {
   border-radius: 18px;
 }
 
+
 #add-image, #settings-box, #paper-settings-box {
   width: 225px;
 }
 
 #add-image {
+  height: 190px;
+  cursor: pointer;
   padding-bottom: 8px;
   background-color: #FFE1E3;
   border-color: #FFADB2;
+}
+
+#add-image:active {
+  transform: translateY(4px);
+  border-bottom-width: 4px;
+  height: 186px;
 }
 
 #settings-box {
@@ -155,8 +164,6 @@ button.nav-button:hover:enabled {
   top: 36px;
 }
 
-
-
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
     /* display: none; <- Crashes Chrome on hover */
@@ -209,18 +216,42 @@ input[type=number] {
   font-style: italic;
 }
 
-#zoom-in-button,
-#zoom-fit-button,
-#zoom-out-button {
+.zoom-button{
   position: absolute;
   bottom: 0;
-  right: 0;
+  right: 18px;
   width: 100px;
   height: 90px;
   background-color: #D6F6FF;
   border-color: #8CC8D9;
   border-bottom-width: 12px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 40%;
   border-radius: 100px;
+  cursor: pointer;
+}
+
+#zoom-in-button {
+  background-image: url('./../assets/images/zoom-in.svg');
+  bottom: calc( 108px * 2 + 36px)
+}
+
+#zoom-fit-button {
+  background-image: url('./../assets/images/zoom-fit.svg');
+  bottom: calc( 108px * 1 + 36px)
+}
+
+#zoom-out-button {
+  background-image: url('./../assets/images/zoom-out.svg');
+  bottom: calc(36px)
+}
+
+.zoom-button:active {
+  transform: (translateY(8px));
+  height: 82px;
+  border-bottom-width: 4px;
+
 }
 
 [hidden] { display: none !important; }
