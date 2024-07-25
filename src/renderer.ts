@@ -2,24 +2,17 @@ import "./css/index.css";
 import {
   ActiveSelection,
   Canvas,
-  Line,
-  Group,
-  iMatrix,
   Rect,
-  Shadow,
   util,
-  Point,
   FabricObject,
   FabricImage,
   ImageFormat,
   TPointerEventInfo,
-  TPointerEvent,
 } from "fabric";
 import { changeDpiDataUrl } from "changedpi";
 
 // TODO: Check out https://codepen.io/janih/pen/EjaNXP for snap to grid
 
-const CANVAS_DEFAULT_PPI = 72; // TODO: Kinda wrong I think but we'll keep this value for now
 const DEFAULT_PPI = 300;
 const DEFAULT_WIDTH_IN_INCHES = 8.5;
 const DEFAULT_HEIGHT_IN_INCHES = 11;
@@ -39,11 +32,13 @@ let documentRectangle: FabricObject;
 let ppi: number;
 
 let openedFilename: string | null = null;
-let needsSave = false;
 
 const overallContainer = document.getElementById("fabric-canvas-container");
 
 const saveButton = document.getElementById("save-canvas") as HTMLButtonElement;
+const zoomInButton = document.getElementById("zoom-in-button") as HTMLButtonElement;
+const zoomOutButton = document.getElementById("zoom-out-button") as HTMLButtonElement;
+const zoomFitButton = document.getElementById("zoom-fit-button") as HTMLButtonElement;
 const fileNameBox = document.getElementById("file-name");
 const paperSettingsBox = document.getElementById("paper-settings-box");
 const paperWidthInput = document.getElementById(
@@ -236,6 +231,31 @@ function redoClone(toClone: Canvas) {
   return canvas.loadFromJSON(json);
 }
 
+function zoomByDelta(delta: number) {
+  let zoom = canvas.getZoom();
+  zoom *= 0.999 ** delta;
+  if (zoom > 2) zoom = 2;
+  if (zoom < 0.1) zoom = 0.1;
+  const center = canvas.getCenterPoint();
+  canvas.zoomToPoint(center, zoom);
+  canvas.requestRenderAll();
+}
+
+zoomInButton.addEventListener('click', onZoomInButtonClicked);
+function onZoomInButtonClicked() {
+  zoomByDelta(-100);
+}
+
+zoomOutButton.addEventListener('click', onZoomOutButtonClicked);
+function onZoomOutButtonClicked() {
+  zoomByDelta(100);
+}
+
+zoomFitButton.addEventListener('click', onZoomFitButtonClicked);
+function onZoomFitButtonClicked() {
+  zoomToFitDocument();
+}
+
 const paperSettingsButton = document.getElementById("settings");
 paperSettingsButton.addEventListener("click", () => {
   if (paperSettingsBox.hidden) {
@@ -332,14 +352,7 @@ function onMouseWheel(opt) {
   requestAnimationFrame(() => {
     const delta = opt.e.deltaY;
     if (altKeyPressed) {
-      let zoom = canvas.getZoom();
-      zoom *= 0.999 ** delta;
-      if (zoom > 2) zoom = 2;
-      if (zoom < 0.1) zoom = 0.1;
-      const center = canvas.getCenterPoint();
-      canvas.zoomToPoint(center, zoom);
-
-      canvas.requestRenderAll();
+      zoomByDelta(delta);
     } else {
       // pan up and down
 
