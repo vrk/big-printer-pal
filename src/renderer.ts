@@ -65,7 +65,6 @@ async function main() {
   createNewCanvas();
   const loadedData = await window.electronAPI.loadLastSaveIfAny();
   if (loadedData) {
-    console.log(loadedData);
     await loadSnapshotData(loadedData);
   }
   setCanvasDimensionsToWindowSize();
@@ -86,7 +85,6 @@ async function main() {
 }
 
 function addCanvasEventListeners() {
-  console.log("event listeners added!");
   canvas.on("mouse:wheel", onMouseWheel);
   canvas.on("mouse:down", onMouseDown);
   canvas.on("mouse:move", onMouseMove);
@@ -98,7 +96,6 @@ function addCanvasEventListeners() {
 }
 
 function removeCanvasEventListeners() {
-  console.log("event listeners removed!");
   disablePaperSettingsBox();
   disableSettingsBoxForActiveObject();
   canvas.off("mouse:wheel", onMouseWheel);
@@ -127,12 +124,10 @@ async function loadSnapshotData(loadedData: any) {
   }
 
   ppi = loadedData.snapshot.ppi;
-  console.log(loadedData.snapshot.canvasData);
   canvas = await canvas.loadFromJSON(loadedData.snapshot.canvasData);
   documentRectangle = canvas
     .getObjects()
     .find((obj) => obj.id === BACKGROUND_RECT_ID);
-  console.log(documentRectangle);
   const editableObjects = canvas
     .getObjects()
     .filter((obj) => obj.id !== BACKGROUND_RECT_ID);
@@ -142,7 +137,6 @@ async function loadSnapshotData(loadedData: any) {
   openedFilename = loadedData.openedFileName;
   fileNameBox.innerHTML = openedFilename;
   saveButton.disabled = true;
-  console.log(canvas.getObjects());
 
   setInitialPaperValues();
   addCanvasEventListeners();
@@ -191,22 +185,6 @@ function onDocEdit() {
   saveButton.disabled = false;
   const name = openedFilename ? openedFilename : "Untitled";
   fileNameBox.innerHTML = `${name}*`;
-  // TODO: Implement:
-  // - mark dirty
-  // - add to history
-  // console.log('SAVIN');
-  // clearTimeout(autosaveTimer);
-  // autosaveTimer = setTimeout(function () {
-  //   requestIdleCallback(() => {
-  //     console.log('oop', performance.now());
-  //     const data = {
-  //       ppi,
-  //       canvasData: canvas.toObject(PROPERTIES_TO_INCLUDE),
-  //     };
-  //     console.log('after', performance.now());
-  //     window.electronAPI.saveSnapshot(data);
-  //   })
-  // }, 500);
 }
 
 // From vue-fabric-editor
@@ -227,7 +205,6 @@ function setCenterFromObject(obj: FabricObject) {
 }
 
 function setCanvasDimensionsToWindowSize() {
-  console.log("set canvas dim");
   canvas.setDimensions({
     width: overallContainer.offsetWidth,
     height: overallContainer.offsetHeight,
@@ -306,7 +283,6 @@ saveButton.addEventListener("click", async () => {
     canvasData: canvas.toObject(PROPERTIES_TO_INCLUDE),
   };
   const saveResult = await window.electronAPI.saveToFile(data);
-  console.log("save", saveResult ? "succeeded" : "failed");
   if (saveResult) {
     fileNameBox.innerHTML = openedFilename;
     saveButton.disabled = true;
@@ -386,13 +362,11 @@ function onMouseWheel(opt) {
 }
 
 function onObjectAdded({ target }) {
-  console.log("object is added");
   canvas.setActiveObject(target);
   enableSettingsBoxFor(target);
 }
 
 function onObjectModified() {
-  console.log('here modified');
   onDocEdit();
 }
 
@@ -406,7 +380,6 @@ function onObjectMoving({ target }) {
 }
 
 document.addEventListener("keydown", function (event) {
-  console.log(event);
   if (event.key == "Alt" || event.key === "Meta") {
     altKeyPressed = true;
   }
@@ -417,13 +390,11 @@ document.addEventListener("keyup", function (event) {
     altKeyPressed = false;
   } else if (event.key === "Backspace" || event.key === "Delete") {
     const activeObjects = canvas.getActiveObjects();
-    console.log("get active elemnt", document.activeElement);
     // TODO: Kind of a hack to prevent deletions when editing the sidebar settings
     if (
       activeObjects.length === 0 ||
       document.activeElement.nodeName === "INPUT"
     ) {
-      console.log("bye");
       return;
     }
     for (const object of activeObjects) {
@@ -436,7 +407,6 @@ document.addEventListener("keyup", function (event) {
 
 const addImageButton = document.getElementById("add-image");
 addImageButton.addEventListener("click", async () => {
-  console.log("hi");
   const base64 = await window.electronAPI.openFile();
   if (!base64) {
     return; // canceled
@@ -473,7 +443,6 @@ function setEditableObjectProperties(object: FabricObject) {
 async function onPaste(e: ClipboardEvent) {
   e.preventDefault();
   for (const item of e.clipboardData.items) {
-    console.log(item);
     if (item.type.startsWith("image/")) {
       const file = item.getAsFile();
       if (!file) {
@@ -482,14 +451,12 @@ async function onPaste(e: ClipboardEvent) {
       const objectUrl = URL.createObjectURL(file);
       addImageToCanvas(objectUrl);
     } else if (item.type.startsWith("text/plain")) {
-      console.log("hi", item);
       item.getAsString(async (text) => {
         try {
           const parsed = JSON.parse(text);
           if (!parsed.type) {
             return;
           }
-          console.log("parsedType", parsed.type);
           if (parsed.type.toLowerCase() === "activeselection") {
             // We've got multiple items, so let's recreate the selection group
             const objects = await util.enlivenObjects<FabricObject>(
@@ -533,7 +500,6 @@ function addObjectGroupToCanvas(objects: Array<FabricObject>) {
 }
 
 function handleLocalCopy() {
-  console.log("plumbed");
   const activeObject = canvas.getActiveObject();
   if (!activeObject) {
     return;
@@ -573,7 +539,6 @@ async function handleSaveFromMain(fileName) {
     canvasData: canvas.toObject(PROPERTIES_TO_INCLUDE),
   };
   const saveResult = await window.electronAPI.saveToFile(data);
-  console.log("save", saveResult ? "succeeded" : "failed");
   if (saveResult) {
     fileNameBox.innerHTML = fileName;
     saveButton.disabled = true;
@@ -673,7 +638,6 @@ let lastPosY: any = null;
 
 function onMouseDown(opt: TPointerEventInfo) {
   disablePaperSettingsBox();
-  console.log("clicked ", opt.target);
   // Ignore clicks on doc or objects
   if (opt.target !== undefined) {
     if (opt.target.selectable) {
@@ -924,7 +888,6 @@ function setObjectX(object: FabricObject, newXInput: string) {
   try {
     const value = parseFloat(newXInput) * ppi + topLeftOrigin.x;
     if (value) {
-      console.log("value is", value);
       object.setX(value);
       object.setCoords();
       canvas.requestRenderAll();
@@ -940,7 +903,6 @@ function setObjectY(object: FabricObject, newYInput: string) {
   try {
     const value = parseFloat(newYInput) * ppi + topLeftOrigin.y;
     if (value) {
-      console.log("value is", value);
       object.setY(value);
       object.setCoords();
       canvas.requestRenderAll();

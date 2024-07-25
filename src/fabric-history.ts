@@ -63,7 +63,6 @@ class FabricHistory {
   }
 
   private historySaveAddObject(objectEvent: any) {
-    console.log("add", objectEvent);
     if (this.historyProcessing) return;
     this.historyRedo = [];
 
@@ -88,7 +87,6 @@ class FabricHistory {
 
   private historyModifyObject(objectEvent: any) {
     if (this.historyProcessing) return;
-    console.log('modify object');
     this.historyRedo = [];
     const transform = objectEvent.transform as Transform;
 
@@ -212,7 +210,6 @@ class FabricHistory {
   }
 
   async undo() {
-    console.log(this.canvas.getObjects());
     if (this.historyUndo.length === 0) {
       return;
     }
@@ -220,7 +217,6 @@ class FabricHistory {
 
     this.historyProcessing = true;
 
-    console.log("undo", actionToUndo);
     switch (actionToUndo.type) {
       case "addObject":
         // undo add object -> remove
@@ -301,7 +297,6 @@ class FabricHistory {
 // TODO: CONSOLIDATE
 
 function setEditableObjectProperties(object: FabricObject) {
-  console.log("EDITABLEPROPERTIES");
   object.set({
     transparentCorners: false,
     selectable: true,

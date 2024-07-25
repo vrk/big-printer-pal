@@ -81,7 +81,6 @@ function buildMenu(mainWindow) {
           label: "Copy",
           accelerator: "CommandOrControl+C",
           click: () => {
-            console.log("Electron rocks!");
             mainWindow.webContents.send('system:local-copy');
           },
         },
@@ -234,7 +233,6 @@ async function onMenuSave(mainWindow) {
       return;
     }
   }
-  console.log(saveFilePath);
 
   mainWindow.webContents.send('system:save-canvas', path.basename(saveFilePath));
 }
@@ -345,12 +343,10 @@ async function handleFileDownload(_: any, dataUrl: string) {
     ],
   };
   dialog.showSaveDialog(null, options).then(({ filePath }) => {
-    console.log("start", performance.now());
     var data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
     var buf = Buffer.from(data, "base64");
 
     fs.writeFile(filePath, buf, () => {
-      console.log("end", performance.now());
     });
   });
 }
