@@ -106,6 +106,27 @@ function buildMenu(mainWindow) {
         { role: "forceReload" },
         { role: "toggleDevTools" },
         // { type: 'separator' },
+        {
+          label: "Reset Zoom",
+          accelerator: "CommandOrControl+0",
+          click: () => {
+            mainWindow.webContents.send('system:local-zoom-fit');
+          },
+        },
+        {
+          label: "Zoom In",
+          accelerator: "CommandOrControl+Plus",
+          click: () => {
+            mainWindow.webContents.send('system:local-zoom-in');
+          },
+        },
+        {
+          label: "Zoom Out",
+          accelerator: "CommandOrControl+-",
+          click: () => {
+            mainWindow.webContents.send('system:local-zoom-out');
+          },
+        },
         // { role: 'resetZoom' },
         // { role: 'zoomIn' },
         // { role: 'zoomOut' },

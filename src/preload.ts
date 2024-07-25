@@ -18,5 +18,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onRequestLoadCanvas: (callback: Function) => ipcRenderer.on('system:load-canvas', (_event, value) => callback(value)),
   onLocalUndo: (callback: Function) => ipcRenderer.on('system:local-undo', (_event, value) => callback(value)),
   onLocalRedo: (callback: Function) => ipcRenderer.on('system:local-redo', (_event, value) => callback(value)),
+
+  onLocalZoomIn: (callback: Function) => ipcRenderer.on('system:local-zoom-in', (_event, value) => callback(value)),
+  onLocalZoomOut: (callback: Function) => ipcRenderer.on('system:local-zoom-out', (_event, value) => callback(value)),
+  onLocalZoomFit: (callback: Function) => ipcRenderer.on('system:local-zoom-fit', (_event, value) => callback(value)),
 })
 

@@ -76,6 +76,9 @@ async function main() {
   window.electronAPI.onLocalCopy(handleLocalCopy);
   window.electronAPI.onLocalUndo(handleLocalUndo);
   window.electronAPI.onLocalRedo(handleLocalRedo);
+  window.electronAPI.onLocalZoomIn(handleLocalZoomIn);
+  window.electronAPI.onLocalZoomOut(handleLocalZoomOut);
+  window.electronAPI.onLocalZoomFit(handleLocalZoomFit);
   window.electronAPI.onRequestSaveCanvas(handleSaveFromMain);
   window.electronAPI.onRequestLoadCanvas(handleLoadFromMain);
 
@@ -549,6 +552,18 @@ function handleLocalUndo() {
 
 function handleLocalRedo() {
   canvasHistory.redo();
+}
+
+function handleLocalZoomIn() {
+  onZoomInButtonClicked();
+}
+
+function handleLocalZoomOut() {
+  onZoomOutButtonClicked();
+}
+
+function handleLocalZoomFit() {
+  onZoomFitButtonClicked();
 }
 
 async function handleSaveFromMain(fileName) {
