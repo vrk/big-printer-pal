@@ -6,12 +6,13 @@ import {
   util,
   FabricObject,
   FabricImage,
+  Point,
   ImageFormat,
   TPointerEventInfo,
 } from "fabric";
 import { changeDpiDataUrl } from "changedpi";
 import FabricHistory from "./fabric-history";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 // TODO: Check out https://codepen.io/janih/pen/EjaNXP for snap to grid
 
@@ -35,7 +36,6 @@ let ppi: number;
 
 let openedFilename: string | null = null;
 let canvasHistory: FabricHistory;
-
 
 const overallContainer = document.getElementById("fabric-canvas-container");
 
@@ -153,7 +153,7 @@ async function createNewCanvas() {
 
   canvas = new Canvas("html-canvas", {
     controlsAboveOverlay: true,
-    renderOnAddRemove: false
+    renderOnAddRemove: false,
   });
   ppi = DEFAULT_PPI;
   documentRectangle = new Rect({
@@ -341,6 +341,7 @@ printButton.addEventListener("click", async () => {
 });
 
 let altKeyPressed = false;
+let spacebarPressed = false;
 
 function onMouseWheel(opt) {
   opt.e.preventDefault();
@@ -380,13 +381,25 @@ function onObjectMoving({ target }) {
 }
 
 document.addEventListener("keydown", function (event) {
-  if (event.key == "Alt" || event.key === "Meta") {
+  if (event.key === " ") {
+    spacebarPressed = true;
+    canvas.setCursor("grab");
+  } else if (event.key == "Alt" || event.key === "Meta") {
     altKeyPressed = true;
   }
 });
 
 document.addEventListener("keyup", function (event) {
-  if (event.key === "Alt" || event.key === "Meta") {
+  if (event.key === " ") {
+    spacebarPressed = false;
+    if (
+      documentRectangle.containsPoint(lastScenePoint)
+    ) {
+      canvas.setCursor("default");
+    } else {
+      console.log('nop');
+    }
+  } else if (event.key === "Alt" || event.key === "Meta") {
     altKeyPressed = false;
   } else if (event.key === "Backspace" || event.key === "Delete") {
     const activeObjects = canvas.getActiveObjects();
@@ -425,7 +438,6 @@ function setEditableObjectProperties(object: FabricObject) {
   if (!object.id) {
     object.id = uuidv4();
   }
-
 
   object.set({
     transparentCorners: false,
@@ -506,8 +518,7 @@ function handleLocalCopy() {
   }
   // TODO ugh hack
 
-  const copy = 
-    activeObject.toObject(PROPERTIES_TO_INCLUDE)
+  const copy = activeObject.toObject(PROPERTIES_TO_INCLUDE);
   delete copy.id;
   const objectAsJson = JSON.stringify(copy);
   return navigator.clipboard.writeText(objectAsJson);
@@ -635,11 +646,12 @@ function getClientPosition(e) {
 let isDragging = false;
 let lastPosX: any = null;
 let lastPosY: any = null;
+let lastScenePoint: any = null;
 
 function onMouseDown(opt: TPointerEventInfo) {
   disablePaperSettingsBox();
   // Ignore clicks on doc or objects
-  if (opt.target !== undefined) {
+  if (opt.target !== undefined && !spacebarPressed) {
     if (opt.target.selectable) {
       enableSettingsBoxFor(opt.target);
     }
@@ -659,9 +671,12 @@ function onMouseDown(opt: TPointerEventInfo) {
 }
 
 function onMouseMove(opt) {
+  lastScenePoint = canvas.getScenePoint(opt.e);
   if (!isDragging) {
-    if (opt.target === undefined) {
+    if (opt.target === undefined || spacebarPressed) {
       canvas.setCursor("grab");
+    } else {
+      canvas.setCursor("default");
     }
     return;
   }
