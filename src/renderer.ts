@@ -547,6 +547,8 @@ function onObjectMoving({ target }) {
   canvas.renderAll();
 }
 
+
+
 document.addEventListener("keydown", function (event) {
   if (event.key == "Shift") {
     shiftPressed = true;
@@ -623,19 +625,22 @@ function setEditableObjectProperties(object: FabricObject) {
     x: 0,
     y: -0.5,
     cursorStyle: 'pointer',
-    actionHandler: onCropFromTop
+    actionHandler: onCropFromTop,
+    render: renderHorizontalCropIcon,
   });
   object.controls.mr = new Control({
     x: 0.5,
     y: 0,
     cursorStyle: 'pointer',
-    actionHandler: onCropFromRight
+    actionHandler: onCropFromRight,
+    render: renderVerticalCropIcon,
   });
   object.controls.ml = new Control({
     x: -0.5,
     y: 0,
     // offsetX: 100,
     cursorStyle: 'pointer',
+    render: renderVerticalCropIcon,
     actionHandler: onCropFromLeft
   });
   object.controls.mb = new Control({
@@ -643,8 +648,30 @@ function setEditableObjectProperties(object: FabricObject) {
     y: 0.5,
     // offsetX: 100,
     cursorStyle: 'pointer',
+    render: renderHorizontalCropIcon,
     actionHandler: onCropFromBottom
   });
+}
+
+
+function renderHorizontalCropIcon(ctx, left, top, styleOverride, fabricObject) {
+  ctx.save();
+  ctx.translate(left, top);
+  // ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
+  // ctx.drawImage(deleteImg, -size / 2, -size / 2, size, size);
+  const rectangleWidth = fabricObject.cornerSize * 2;
+  ctx.fillRect(-rectangleWidth / 2, -rectangleWidth / 4, rectangleWidth , rectangleWidth / 2)
+  ctx.restore();
+}
+
+function renderVerticalCropIcon(ctx, left, top, styleOverride, fabricObject) {
+  ctx.save();
+  ctx.translate(left, top);
+  // ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
+  // ctx.drawImage(deleteImg, -size / 2, -size / 2, size, size);
+  const rectangleHeight = fabricObject.cornerSize * 2;
+  ctx.fillRect(-rectangleHeight / 4, -rectangleHeight / 2, rectangleHeight /2, rectangleHeight);
+  ctx.restore();
 }
 
 function onCropFromRight(eventData, transform, x, y) {
