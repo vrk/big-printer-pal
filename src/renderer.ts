@@ -24,6 +24,7 @@ const DEFAULT_HEIGHT_IN_INCHES = 11;
 const DEFAULT_DOC_WIDTH = DEFAULT_WIDTH_IN_INCHES * DEFAULT_PPI;
 const DEFAULT_DOC_HEIGHT = DEFAULT_HEIGHT_IN_INCHES * DEFAULT_PPI;
 const BACKGROUND_RECT_ID = "__background-id__";
+const BACKGROUND_GRID_ID = "__grid-id__";
 const PROPERTIES_TO_INCLUDE = [
   "id",
   "selectable",
@@ -39,8 +40,10 @@ let ppi: number;
 let openedFilename: string | null = null;
 let canvasHistory: FabricHistory;
 
-const overallContainer = document.getElementById("fabric-canvas-container");
+// TODO: make this a little more elegant
+let activeInputController = new AbortController();
 
+const overallContainer = document.getElementById("fabric-canvas-container");
 const saveButton = document.getElementById("save-canvas") as HTMLButtonElement;
 const zoomInButton = document.getElementById(
   "zoom-in-button"
@@ -61,6 +64,20 @@ const paperHeightInput = document.getElementById(
 ) as HTMLInputElement;
 const paperPpiInput = document.getElementById(
   "input-paper-ppi"
+) as HTMLInputElement;
+const settingsBox = document.getElementById("settings-box");
+const imagePreview = document.getElementById("selected-object-preview");
+const objectWidthInput = document.getElementById(
+  "input-object-width"
+) as HTMLInputElement;
+const objectHeightInput = document.getElementById(
+  "input-object-height"
+) as HTMLInputElement;
+const objectXInput = document.getElementById(
+  "input-object-x"
+) as HTMLInputElement;
+const objectYInput = document.getElementById(
+  "input-object-y"
 ) as HTMLInputElement;
 
 async function main() {
@@ -83,14 +100,11 @@ async function main() {
   window.electronAPI.onRequestSaveCanvas(handleSaveFromMain);
   window.electronAPI.onRequestLoadCanvas(handleLoadFromMain);
 
-  const grid = createGridGroup(documentRectangle);
-  canvas.add(grid);
-  canvas.sendObjectToBack(grid);
-  canvas.sendObjectToBack(documentRectangle);
   canvas.requestRenderAll();
 }
 
 function addCanvasEventListeners() {
+  console.log('adding event listeners!');
   canvas.on("mouse:wheel", onMouseWheel);
   canvas.on("mouse:down", onMouseDown);
   canvas.on("mouse:move", onMouseMove);
@@ -102,6 +116,7 @@ function addCanvasEventListeners() {
 }
 
 function removeCanvasEventListeners() {
+  console.log('removing event listeners!');
   disablePaperSettingsBox();
   disableSettingsBoxForActiveObject();
   canvas.off("mouse:wheel", onMouseWheel);
@@ -147,7 +162,27 @@ async function loadSnapshotData(loadedData: any) {
 
   setInitialPaperValues();
   addCanvasEventListeners();
+  addGrid();
   canvasHistory = new FabricHistory(canvas);
+}
+
+function addGrid() {
+  const grid = createGridGroup(documentRectangle);
+  canvas.add(grid);
+  grid.getObjects().forEach(o => canvas.sendObjectToBack(o));
+  canvas.sendObjectToBack(grid);
+  canvas.sendObjectToBack(documentRectangle);
+  canvas.discardActiveObject();
+}
+
+function removeGrid() {
+  const gridObj = canvas.getObjects().find(o => o.id === BACKGROUND_GRID_ID);
+  const gridObjectAsGroup = gridObj as Group;
+  for (const innerObj of gridObjectAsGroup.getObjects()) {
+    canvas.remove(innerObj);
+  }
+  canvas.remove(gridObj);
+  canvas.requestRenderAll();
 }
 
 async function createNewCanvas() {
@@ -184,53 +219,80 @@ async function createNewCanvas() {
   fileNameBox.innerHTML = "Untitled";
   saveButton.disabled = true;
 
-
-
   setInitialPaperValues();
   addCanvasEventListeners();
+  addGrid();
   canvasHistory = new FabricHistory(canvas);
 }
 
 function createGridGroup(rect) {
   const objects: Array<FabricObject> = [];
-
-  for (let line = 1; line < rect.width / ppi; line++) {
-    const lineObj = new Line([0, 0, 0, DEFAULT_DOC_HEIGHT], {
-      left: line * ppi,
-      stroke: "#D8CDB2",
-      strokeWidth: 0.02 * ppi,
+  const smallerStrokeWidth =  0.01 * ppi;
+  const biggerStrokeWidth =  0.015 * ppi;
+  const dashLength = 0.1 * ppi;
+  const lineParams = {
       selectable: false,
       excludeFromExport: true,
       hasControls: false,
       hasBorders: false,
       evented: false,
+  }
+  const solidColor = `rgba(216, 205, 178, 1)`;
+  const dashColor = `rgba(216, 205, 178, 0.5)`;
+
+  // Draw dashed grids
+  const halfSize = (ppi) / 2;
+  for (let line = 0; line < rect.width / ppi - 1; line++) {
+    const lineObj = new Line([0, 0, 0, DEFAULT_DOC_HEIGHT], {
+      left: halfSize + line * ppi - smallerStrokeWidth,
+      stroke: dashColor,
+      strokeDashArray: [dashLength, dashLength],
+      strokeWidth: smallerStrokeWidth,
+      ...lineParams,
+    });
+    objects.push(lineObj);
+  }
+
+  for (let line = 0; line < rect.height / ppi; line++) {
+    const lineObj = new Line([0, 0, DEFAULT_DOC_WIDTH, 0], {
+      top: halfSize + line * ppi - smallerStrokeWidth,
+      stroke: dashColor,
+      strokeDashArray: [dashLength, dashLength],
+      strokeWidth: smallerStrokeWidth,
+      ...lineParams,
+    });
+    objects.push(lineObj);
+  }
+  
+
+  // Draw solid grids
+  for (let line = 1; line < rect.width / ppi; line++) {
+    const lineObj = new Line([0, 0, 0, DEFAULT_DOC_HEIGHT], {
+      left: line * ppi - biggerStrokeWidth,
+      stroke: solidColor,
+      strokeWidth: biggerStrokeWidth,
+      ...lineParams,
     });
     objects.push(lineObj);
   }
 
   for (let line = 1; line < rect.height / ppi; line++) {
     const lineObj = new Line([0, 0, DEFAULT_DOC_WIDTH, 0], {
-      top: line * ppi,
-      stroke: "#D8CDB2",
-      strokeWidth: 0.02 * ppi,
-      hasControls: false,
-      selectable: false,
-      hasBorders: false,
-      evented: false,
-      excludeFromExport: true,
+      top: line * ppi - biggerStrokeWidth,
+      stroke: solidColor,
+      strokeWidth: biggerStrokeWidth,
+      ...lineParams,
     });
     objects.push(lineObj);
   }
   const gridGroup = new Group(objects, {
     left: documentRectangle.left,
     top: documentRectangle.top,
-    selectable: false,
-      hasBorders: false,
-    evented: false,
-    excludeFromExport: true,
-    hasControls: false,
+    width: documentRectangle.width,
+    height: documentRectangle.height,
+    ...lineParams
   });
-  gridGroup.id = "__grid__";
+  gridGroup.id = BACKGROUND_GRID_ID;
   return gridGroup;
 }
 
@@ -395,6 +457,7 @@ printButton.addEventListener("click", async () => {
 
 let altKeyPressed = false;
 let spacebarPressed = false;
+let shiftPressed = false;
 
 function onMouseWheel(opt) {
   opt.e.preventDefault();
@@ -416,6 +479,9 @@ function onMouseWheel(opt) {
 }
 
 function onObjectAdded({ target }) {
+  if (!target.selectable) {
+    return;
+  }
   canvas.setActiveObject(target);
   enableSettingsBoxFor(target);
 }
@@ -430,9 +496,8 @@ function onObjectRemoved({ target }) {
 }
 
 function onObjectMoving({ target }) {
-
   const object = target as FabricObject;
-  const grid = ppi;
+  const gridSize = ppi / 2;
 
   const xDistance = object.left - documentRectangle.left;
   const yDistance = object.top - documentRectangle.top;
@@ -440,17 +505,29 @@ function onObjectMoving({ target }) {
   const withinXRange = xDistance > 0 && xDistance < documentRectangle.width;
   const withinYRange = yDistance > 0 && yDistance < documentRectangle.height;
   const insideDocument = withinXRange && withinYRange;
-  console.log(insideDocument);
 
-  if (insideDocument) {
-    // snapping
-    
-
+  const SNAP_SIZE = gridSize / 4;
+  if (insideDocument && shiftPressed) {
+    console.log(yDistance % gridSize, gridSize)
+    if (yDistance % gridSize < SNAP_SIZE) {
+      console.log('hi')
+      object.top -= yDistance % gridSize;
+    }
+    if ((gridSize - (yDistance + object.height) % gridSize) < SNAP_SIZE) {
+      object.top +=  (gridSize - (yDistance + object.height) % gridSize);
+    } 
+    if (xDistance % gridSize < SNAP_SIZE) {
+      object.left -= xDistance % gridSize;
+    } 
+    if ((xDistance + object.width) % gridSize < SNAP_SIZE) {
+      object.left -=  (xDistance + object.width) % gridSize;
+    } 
+    object.setCoords();
   }
 
   // object.set({
-  //   left: Math.round(object.left / grid) * grid,
-  //   top: Math.round(object.top / grid) * grid
+  //   left: Math.round(object.left / gridSize) * gridSize,
+  //   top: Math.round(object.top / gridSize) * gridSize
   // });
 
   matchInputsToObjectValues(target);
@@ -458,7 +535,9 @@ function onObjectMoving({ target }) {
 }
 
 document.addEventListener("keydown", function (event) {
-  if (event.key === " ") {
+  if (event.key == "Shift") {
+    shiftPressed = true;
+  } else if (event.key === " ") {
     spacebarPressed = true;
     canvas.setCursor("grab");
   } else if (event.key == "Alt" || event.key === "Meta") {
@@ -467,12 +546,12 @@ document.addEventListener("keydown", function (event) {
 });
 
 document.addEventListener("keyup", function (event) {
-  if (event.key === " ") {
+  if (event.key == "Shift") {
+    shiftPressed = false;
+  }else if (event.key === " ") {
     spacebarPressed = false;
     if (lastScenePoint && documentRectangle.containsPoint(lastScenePoint)) {
       canvas.setCursor("default");
-    } else {
-      console.log("nop");
     }
   } else if (event.key === "Alt" || event.key === "Meta") {
     altKeyPressed = false;
@@ -767,23 +846,6 @@ function onMouseMove(opt) {
   onDocEdit();
 }
 
-const settingsBox = document.getElementById("settings-box");
-const imagePreview = document.getElementById("selected-object-preview");
-const objectWidthInput = document.getElementById(
-  "input-object-width"
-) as HTMLInputElement;
-const objectHeightInput = document.getElementById(
-  "input-object-height"
-) as HTMLInputElement;
-const objectXInput = document.getElementById(
-  "input-object-x"
-) as HTMLInputElement;
-const objectYInput = document.getElementById(
-  "input-object-y"
-) as HTMLInputElement;
-
-// TODO: make this a little more elegant
-let activeInputController = new AbortController();
 
 function onMouseUp(opt: TPointerEventInfo) {
   isDragging = false;
@@ -837,6 +899,8 @@ paperWidthInput.addEventListener("input", () => {
       documentRectangle.width = value;
       canvas.clipPath = documentRectangle;
       onDocEdit();
+      removeGrid();
+      addGrid();
       canvas.requestRenderAll();
     } else {
       throw new Error(`invalid value ${value}`);
@@ -854,6 +918,8 @@ paperHeightInput.addEventListener("input", () => {
       documentRectangle.height = value;
       canvas.clipPath = documentRectangle;
       onDocEdit();
+      removeGrid();
+      addGrid();
       canvas.requestRenderAll();
     } else {
       throw new Error(`invalid value ${value}`);
@@ -875,6 +941,8 @@ paperPpiInput.addEventListener("input", () => {
       documentRectangle.height = oldDocHeightInInches * ppi;
       canvas.clipPath = documentRectangle;
       onDocEdit();
+      removeGrid();
+      addGrid();
       canvas.requestRenderAll();
     } else {
       throw new Error(`invalid value ${value}`);

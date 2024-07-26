@@ -124,6 +124,7 @@ main {
 }
 
 #fabric-canvas-container {
+  overflow: hidden;
   position: relative;
   flex-grow: 1;
   flex-shrink: 0;
