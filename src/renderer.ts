@@ -614,7 +614,7 @@ function setEditableObjectProperties(object: FabricObject) {
   object.originY = 'top';
   object.setControlsVisibility({
     // mt: false, // middle top disable
-    mb: false, // midle bottom
+    // mb: false, // midle bottom
     // ml: false, // middle left
     // mr: false,
   });
@@ -637,6 +637,13 @@ function setEditableObjectProperties(object: FabricObject) {
     // offsetX: 100,
     cursorStyle: 'pointer',
     actionHandler: onCropFromLeft
+  });
+  object.controls.mb = new Control({
+    x: 0,
+    y: 0.5,
+    // offsetX: 100,
+    cursorStyle: 'pointer',
+    actionHandler: onCropFromBottom
   });
 }
 
@@ -687,6 +694,25 @@ function onCropFromTop(eventData, transform, x, y) {
     target.height = newHeight;
     target.cropY = target.cropY + cropDelta;
     target.set('top', y);
+    return true;
+  }
+  return false;
+}
+
+
+function onCropFromBottom(eventData, transform, x, y) {
+  const target = transform.target;
+  const originalHeight = target.getOriginalSize().height;
+
+  const scaledHeight = target.getScaledHeight();
+  const newScaledHeight = y - target.top;
+  const percentOfFullHeight = newScaledHeight / scaledHeight;
+
+  const newHeight = target.height * percentOfFullHeight;
+  const cropDelta = target.height * (1 - percentOfFullHeight); 
+  
+  if (newHeight > 0 && newHeight <= originalHeight) {
+    target.height = newHeight;
     return true;
   }
   return false;
