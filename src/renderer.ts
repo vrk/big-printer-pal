@@ -613,12 +613,18 @@ function setEditableObjectProperties(object: FabricObject) {
   object.originX = 'left';
   object.originY = 'top';
   object.setControlsVisibility({
-    mt: false, // middle top disable
+    // mt: false, // middle top disable
     mb: false, // midle bottom
     // ml: false, // middle left
     // mr: false,
   });
   object.snapAngle = 5;
+  object.controls.mt = new Control({
+    x: 0,
+    y: -0.5,
+    cursorStyle: 'pointer',
+    actionHandler: onCropFromTop
+  });
   object.controls.mr = new Control({
     x: 0.5,
     y: 0,
@@ -665,6 +671,27 @@ function onCropFromLeft(eventData, transform, x, y) {
   }
   return false;
 }
+
+function onCropFromTop(eventData, transform, x, y) {
+  const target = transform.target;
+  const originalHeight = target.getOriginalSize().height;
+
+  const delta = y - target.top;
+  const scaledHeight = target.getScaledHeight();
+  const percentDecrease = delta / scaledHeight;
+
+  const newHeight = target.height * (1 - percentDecrease);
+  const cropDelta = target.height * percentDecrease; 
+  
+  if (newHeight > 0 && newHeight <= originalHeight) {
+    target.height = newHeight;
+    target.cropY = target.cropY + cropDelta;
+    target.set('top', y);
+    return true;
+  }
+  return false;
+}
+
 
 async function onPaste(e: ClipboardEvent) {
   e.preventDefault();
