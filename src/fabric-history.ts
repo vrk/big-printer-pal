@@ -85,7 +85,11 @@ class FabricHistory {
     this.historyUndo.push(action);
   }
 
+  private historyScaledObject(objectEvent: any) {
+    console.log('scaled', objectEvent);
+  }
   private historyModifyObject(objectEvent: any) {
+    console.log('modified', objectEvent);
     if (this.historyProcessing) return;
     this.historyRedo = [];
     const transform = objectEvent.transform as Transform;
@@ -119,6 +123,7 @@ class FabricHistory {
       "object:added": (e: any) => this.historySaveAddObject(e),
       "object:removed": (e: any) => this.historySaveRemoveObject(e),
       "object:modified": (e: any) => this.historyModifyObject(e),
+      "object:scaled": (e: any) => this.historyScaledObject(e),
     };
   }
 
@@ -252,6 +257,7 @@ class FabricHistory {
         this.canvas.add(restoredObject);
         break;
       case "modifyObject": {
+        debugger;
         if ((!actionToUndo.objectID && !actionToUndo.objectIDs) || !actionToUndo.previousProperties) {
           console.error("could not undo action", actionToUndo);
           return;

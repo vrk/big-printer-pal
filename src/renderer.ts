@@ -2,6 +2,7 @@ import "./css/index.css";
 import {
   ActiveSelection,
   Canvas,
+  Control,
   Group,
   Rect,
   util,
@@ -10,11 +11,18 @@ import {
   Point,
   Line,
   ImageFormat,
+  Intersection,
+  LayoutManager,
+  controlsUtils,
+  ClipPathLayout,
   TPointerEventInfo,
 } from "fabric";
 import { changeDpiDataUrl } from "changedpi";
 import FabricHistory from "./fabric-history";
 import { v4 as uuidv4 } from "uuid";
+
+
+
 
 // TODO: Check out https://codepen.io/janih/pen/EjaNXP for snap to grid
 
@@ -252,8 +260,10 @@ function createGridGroup(rect) {
       strokeWidth: smallerStrokeWidth,
       ...lineParams,
     });
+   
     objects.push(lineObj);
   }
+  
 
   for (let line = 0; line < rect.height / ppi; line++) {
     const lineObj = new Line([0, 0, DEFAULT_DOC_WIDTH, 0], {
@@ -527,12 +537,12 @@ function onObjectMoving({ target }) {
   //   } 
   //   object.setCoords();
   // }
-
-  object.set({
-    left: Math.round(object.left / gridSize) * gridSize,
-    top: Math.round(object.top / gridSize) * gridSize
-  });
-
+  if (insideDocument && shiftPressed) {
+    object.set({
+      left: Math.round(object.left / gridSize) * gridSize,
+      top: Math.round(object.top / gridSize) * gridSize
+    });
+  }
   matchInputsToObjectValues(target);
   canvas.renderAll();
 }
@@ -600,13 +610,60 @@ function setEditableObjectProperties(object: FabricObject) {
     transparentCorners: false,
     selectable: true,
   });
+  object.originX = 'left';
+  object.originY = 'top';
   object.setControlsVisibility({
     mt: false, // middle top disable
     mb: false, // midle bottom
-    ml: false, // middle left
-    mr: false,
+    // ml: false, // middle left
+    // mr: false,
   });
   object.snapAngle = 5;
+  object.controls.mr = new Control({
+    x: 0.5,
+    y: 0,
+    cursorStyle: 'pointer',
+    actionHandler: onCropFromRight
+  });
+  object.controls.ml = new Control({
+    x: -0.5,
+    y: 0,
+    // offsetX: 100,
+    cursorStyle: 'pointer',
+    actionHandler: onCropFromLeft
+  });
+}
+
+function onCropFromRight(eventData, transform, x, y) {
+  const target = transform.target;
+  const localPoint = controlsUtils.getLocalPoint(transform, transform.originX, transform.originY, x, y);
+  const newWidth = localPoint.x / target.scaleX;
+  const originalWidth = target.getOriginalSize().width;
+  if (newWidth > 0 && newWidth <= originalWidth) {
+    target.set('width', newWidth);
+    return true;
+  }
+  return false;
+}
+
+function onCropFromLeft(eventData, transform, x, y) {
+  const target = transform.target;
+  const originalWidth = target.getOriginalSize().width;
+
+  const delta = x - target.left;
+  const scaledWidth = target.getScaledWidth();
+  const percentDecrease = delta / scaledWidth;
+
+  const newWidth = target.width * (1 - percentDecrease);
+  const cropDelta = target.width * percentDecrease; 
+  
+  if (newWidth > 0 && newWidth <= originalWidth) {
+    target.width = newWidth;
+    target.cropX = target.cropX + cropDelta;
+    target.set('left', x);
+    return true;
+  }
+  return false;
 }
 
 async function onPaste(e: ClipboardEvent) {
