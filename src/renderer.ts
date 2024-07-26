@@ -612,8 +612,8 @@ function setEditableObjectProperties(object: FabricObject) {
     transparentCorners: false,
     selectable: true,
   });
-  object.originX = 'left';
-  object.originY = 'top';
+  // object.originX = 'left';
+  // object.originY = 'top';
   object.setControlsVisibility({
     // mt: false, // middle top disable
     // mb: false, // midle bottom
@@ -626,6 +626,7 @@ function setEditableObjectProperties(object: FabricObject) {
     y: -0.5,
     cursorStyle: 'pointer',
     actionHandler: onCropFromTop,
+    actionName: 'cropping',
     render: renderHorizontalCropIcon,
   });
   object.controls.mr = new Control({
@@ -633,6 +634,7 @@ function setEditableObjectProperties(object: FabricObject) {
     y: 0,
     cursorStyle: 'pointer',
     actionHandler: onCropFromRight,
+    actionName: 'cropping',
     render: renderVerticalCropIcon,
   });
   object.controls.ml = new Control({
@@ -640,6 +642,7 @@ function setEditableObjectProperties(object: FabricObject) {
     y: 0,
     // offsetX: 100,
     cursorStyle: 'pointer',
+    actionName: 'cropping',
     render: renderVerticalCropIcon,
     actionHandler: onCropFromLeft
   });
@@ -648,11 +651,11 @@ function setEditableObjectProperties(object: FabricObject) {
     y: 0.5,
     // offsetX: 100,
     cursorStyle: 'pointer',
+    actionName: 'cropping',
     render: renderHorizontalCropIcon,
     actionHandler: onCropFromBottom
   });
 }
-
 
 function renderHorizontalCropIcon(ctx, left, top, styleOverride, fabricObject) {
   ctx.save();
@@ -678,8 +681,8 @@ function onCropFromRight(eventData, transform, x, y) {
   const target = transform.target;
   const localPoint = controlsUtils.getLocalPoint(transform, transform.originX, transform.originY, x, y);
   const newWidth = localPoint.x / target.scaleX;
-  const originalWidth = target.getOriginalSize().width;
-  if (newWidth > 0 && newWidth <= originalWidth) {
+  const originalWidthWithCrop = target.getOriginalSize().width - (target.cropX || 0);
+  if (newWidth > 0 && newWidth <= originalWidthWithCrop) {
     target.set('width', newWidth);
     return true;
   }
@@ -688,7 +691,7 @@ function onCropFromRight(eventData, transform, x, y) {
 
 function onCropFromLeft(eventData, transform, x, y) {
   const target = transform.target;
-  const originalWidth = target.getOriginalSize().width;
+  const originalWidthWithCrop = target.getOriginalSize().width;
 
   const delta = x - target.left;
   const scaledWidth = target.getScaledWidth();
@@ -696,10 +699,11 @@ function onCropFromLeft(eventData, transform, x, y) {
 
   const newWidth = target.width * (1 - percentDecrease);
   const cropDelta = target.width * percentDecrease; 
+  const newCrop = target.cropX + cropDelta;
   
-  if (newWidth > 0 && newWidth <= originalWidth) {
+  if (newWidth > 0 && newWidth <= originalWidthWithCrop) {
     target.width = newWidth;
-    target.cropX = target.cropX + cropDelta;
+    target.cropX = Math.max(newCrop, 0);
     target.set('left', x);
     return true;
   }
@@ -719,7 +723,7 @@ function onCropFromTop(eventData, transform, x, y) {
   
   if (newHeight > 0 && newHeight <= originalHeight) {
     target.height = newHeight;
-    target.cropY = target.cropY + cropDelta;
+    target.cropY = Math.max(target.cropY + cropDelta, 0);
     target.set('top', y);
     return true;
   }
