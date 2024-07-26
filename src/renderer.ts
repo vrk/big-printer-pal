@@ -236,6 +236,7 @@ function createGridGroup(rect) {
       hasControls: false,
       hasBorders: false,
       evented: false,
+      objectCaching: false
   }
   const solidColor = `rgba(216, 205, 178, 1)`;
   const dashColor = `rgba(216, 205, 178, 0.5)`;
@@ -246,6 +247,7 @@ function createGridGroup(rect) {
     const lineObj = new Line([0, 0, 0, DEFAULT_DOC_HEIGHT], {
       left: halfSize + line * ppi - smallerStrokeWidth,
       stroke: dashColor,
+      strokeDashOffset: dashLength / 2,
       strokeDashArray: [dashLength, dashLength],
       strokeWidth: smallerStrokeWidth,
       ...lineParams,
@@ -257,6 +259,7 @@ function createGridGroup(rect) {
     const lineObj = new Line([0, 0, DEFAULT_DOC_WIDTH, 0], {
       top: halfSize + line * ppi - smallerStrokeWidth,
       stroke: dashColor,
+      strokeDashOffset: dashLength / 2,
       strokeDashArray: [dashLength, dashLength],
       strokeWidth: smallerStrokeWidth,
       ...lineParams,
@@ -497,7 +500,7 @@ function onObjectRemoved({ target }) {
 
 function onObjectMoving({ target }) {
   const object = target as FabricObject;
-  const gridSize = ppi / 2;
+  const gridSize = ppi / 8;
 
   const xDistance = object.left - documentRectangle.left;
   const yDistance = object.top - documentRectangle.top;
@@ -506,29 +509,29 @@ function onObjectMoving({ target }) {
   const withinYRange = yDistance > 0 && yDistance < documentRectangle.height;
   const insideDocument = withinXRange && withinYRange;
 
-  const SNAP_SIZE = gridSize / 4;
-  if (insideDocument && shiftPressed) {
-    console.log(yDistance % gridSize, gridSize)
-    if (yDistance % gridSize < SNAP_SIZE) {
-      console.log('hi')
-      object.top -= yDistance % gridSize;
-    }
-    if ((gridSize - (yDistance + object.height) % gridSize) < SNAP_SIZE) {
-      object.top +=  (gridSize - (yDistance + object.height) % gridSize);
-    } 
-    if (xDistance % gridSize < SNAP_SIZE) {
-      object.left -= xDistance % gridSize;
-    } 
-    if ((xDistance + object.width) % gridSize < SNAP_SIZE) {
-      object.left -=  (xDistance + object.width) % gridSize;
-    } 
-    object.setCoords();
-  }
+  // const SNAP_SIZE = gridSize / 4;
+  // if (insideDocument && shiftPressed) {
+  //   console.log(yDistance % gridSize, gridSize)
+  //   if (yDistance % gridSize < SNAP_SIZE) {
+  //     console.log('hi')
+  //     object.top -= yDistance % gridSize;
+  //   }
+  //   if ((gridSize - (yDistance + object.height) % gridSize) < SNAP_SIZE) {
+  //     object.top +=  (gridSize - (yDistance + object.height) % gridSize);
+  //   } 
+  //   if (xDistance % gridSize < SNAP_SIZE) {
+  //     object.left -= xDistance % gridSize;
+  //   } 
+  //   if ((xDistance + object.width) % gridSize < SNAP_SIZE) {
+  //     object.left -=  (xDistance + object.width) % gridSize;
+  //   } 
+  //   object.setCoords();
+  // }
 
-  // object.set({
-  //   left: Math.round(object.left / gridSize) * gridSize,
-  //   top: Math.round(object.top / gridSize) * gridSize
-  // });
+  object.set({
+    left: Math.round(object.left / gridSize) * gridSize,
+    top: Math.round(object.top / gridSize) * gridSize
+  });
 
   matchInputsToObjectValues(target);
   canvas.renderAll();
