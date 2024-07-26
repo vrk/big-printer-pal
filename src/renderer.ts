@@ -699,7 +699,6 @@ function onCropFromTop(eventData, transform, x, y) {
   return false;
 }
 
-
 function onCropFromBottom(eventData, transform, x, y) {
   const target = transform.target;
   const originalHeight = target.getOriginalSize().height;
@@ -709,7 +708,6 @@ function onCropFromBottom(eventData, transform, x, y) {
   const percentOfFullHeight = newScaledHeight / scaledHeight;
 
   const newHeight = target.height * percentOfFullHeight;
-  const cropDelta = target.height * (1 - percentOfFullHeight); 
   
   if (newHeight > 0 && newHeight <= originalHeight) {
     target.height = newHeight;
@@ -717,7 +715,6 @@ function onCropFromBottom(eventData, transform, x, y) {
   }
   return false;
 }
-
 
 async function onPaste(e: ClipboardEvent) {
   e.preventDefault();
