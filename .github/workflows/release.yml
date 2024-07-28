@@ -32,7 +32,7 @@ jobs:
       run: npm install
     - name: publish
       env:
-        DEBUG: electron-packager*
+        DEBUG: electron-packager*,*osx-sign*
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         APPLE_SIGN_ID_NAME: ${{ secrets.APPLE_SIGN_ID_NAME }}
         APPLE_SIGN_ID: ${{ secrets.APPLE_SIGN_ID }}
