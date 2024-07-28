@@ -8,6 +8,8 @@ if (require("electron-squirrel-startup")) {
   app.quit();
 }
 
+require('update-electron-app')()
+
 const isMac = process.platform === "darwin";
 const LAST_SAVED_FILE_PATH_KEY = "__last_opened_file__";
 
