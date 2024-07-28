@@ -136,6 +136,7 @@ function removeCanvasEventListeners() {
 
   if (canvasHistory) {
     canvasHistory.removeListeners();
+    canvasHistory.clearHistory();
   }
 }
 
