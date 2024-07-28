@@ -47,6 +47,18 @@ const config: ForgeConfig = {
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
     }),
   ],
+  publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: 'vrk',
+          name: 'big-printer-pal'
+        },
+        prerelease: true
+      }
+    }
+  ]
 };
 
 export default config;
