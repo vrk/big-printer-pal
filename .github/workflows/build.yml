@@ -12,6 +12,7 @@ jobs:
     - name: install dependencies
       run: npm install
     - name: build
+
       run: npm run make
 
   build_on_mac:
@@ -25,6 +26,10 @@ jobs:
     - name: install dependencies
       run: npm install
     - name: build
+      env:
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+        TEAM_ID: ${{ secrets.TEAM_ID }}
       run: npm run make
       
   build_on_win:
