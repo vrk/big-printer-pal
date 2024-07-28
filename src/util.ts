@@ -8,7 +8,6 @@ import {
 import { v4 as uuidv4 } from "uuid";
 
 export function setEditableObjectProperties(object: FabricObject) {
-  console.log('setting editable properties!');
   // TODO: UGH hack
   if (!object.id) {
     object.id = uuidv4();

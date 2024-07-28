@@ -109,7 +109,6 @@ async function main() {
 }
 
 function addCanvasEventListeners() {
-  console.log("adding event listeners!");
   canvas.on("mouse:wheel", onMouseWheel);
   canvas.on("mouse:down", onMouseDown);
   canvas.on("mouse:move", onMouseMove);
@@ -121,7 +120,6 @@ function addCanvasEventListeners() {
 }
 
 function removeCanvasEventListeners() {
-  console.log("removing event listeners!");
   disablePaperSettingsBox();
   disableSettingsBoxForActiveObject();
   canvas.off("mouse:wheel", onMouseWheel);
@@ -684,7 +682,6 @@ function addObjectGroupToCanvas(objects: Array<FabricObject>) {
 
 async function handleLocalCopy() {
   const selection = window.getSelection();
-  console.log('selection is', selection, selection.toString())
   if (selection !== null && selection.type !== 'None') {
     return navigator.clipboard.writeText(selection.toString());
   }
@@ -982,7 +979,6 @@ function disablePaperSettingsBox() {
 }
 
 function enableSettingsBoxFor(object: FabricObject) {
-  console.log('enable settings', object);
   disablePaperSettingsBox();
   // Set initial values
   matchInputsToObjectValues(object);
@@ -996,7 +992,6 @@ function enableSettingsBoxFor(object: FabricObject) {
   objectWidthInput.addEventListener(
     "input",
     (e) => {
-      console.log('hi width input for', e);
       setScaledWidth(object, e.currentTarget.value);
     },
     { signal }
@@ -1026,7 +1021,6 @@ function enableSettingsBoxFor(object: FabricObject) {
 }
 
 function disableSettingsBoxForActiveObject() {
-  console.log('disable settings');
   activeInputController.abort();
   canvas.discardActiveObject();
   settingsBox.hidden = true;

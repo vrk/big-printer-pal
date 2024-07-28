@@ -59,7 +59,6 @@ class FabricHistory {
   private canvasEventHandlers;
   constructor(canvas: Canvas) {
     this.canvas = canvas;
-    console.log('history back on');
     this.canvasEventHandlers = {
       "object:added": this.onObjectAdded.bind(this),
       "object:removed": this.onObjectRemoved.bind(this),
@@ -70,16 +69,16 @@ class FabricHistory {
   }
 
   clearHistory() {
-    console.log('history cleared');
     this.historyUndo = [];
     this.historyRedo = [];
+    console.log('clear history');
   }
 
   removeListeners() {
-    console.log('history listeners removed');
     this.canvas.off(this.canvasEventHandlers);
     this.historyUndo = [];
     this.historyRedo = [];
+    console.log('clear history 2');
   }
 
   private historyCacheProperties({ e, transform }) {
@@ -93,9 +92,9 @@ class FabricHistory {
       return;
     }
     this.historyRedo = [];
+    console.log('history even tlcera history');
     const action = this.getHistoryAction(objectEvent, type);
     this.historyUndo.push(action);
-    console.log('my history event', action);
   }
 
   private onObjectAdded(e: any) {
@@ -107,7 +106,6 @@ class FabricHistory {
   }
 
   private onObjectModified(e: any) {
-    console.log(this);
     this.onMyHistoryEvent('modifyObject', e);
   }
 
@@ -135,11 +133,6 @@ class FabricHistory {
   }
 
   private historySaveRemoveObject(target: FabricObject): HistoryAction {
-    if (!target.id && target.getObjects) {
-      console.log('we have a selection')
-    } else {
-
-    }
     return {
       type: "removeObject",
       objectDeepCopy: JSON.stringify(target.toObject(PROPERTIES_TO_INCLUDE)),
@@ -179,6 +172,7 @@ class FabricHistory {
   }
 
   async undo() {
+    console.log('undoing');
     if (this.historyUndo.length === 0) {
       return;
     }
@@ -279,7 +273,7 @@ class FabricHistory {
     object.setCoords();
   }
 
-  private async undoModifyObject(actionToUndo: HistoryAction) {
+  private undoModifyObject(actionToUndo: HistoryAction) {
     if (
       (!actionToUndo.objectID && !actionToUndo.objectIDs) ||
       !actionToUndo.previousProperties
@@ -305,23 +299,27 @@ class FabricHistory {
   }
 
   async redo() {
+    console.log('redoing', this.historyRedo);
     if (this.historyRedo.length === 0) {
+      console.log('early return');
       return;
     }
 
     const actionToRedo = this.historyRedo.pop();
+    console.log(actionToRedo.type);
 
     // And then redo that last action
     this.historyProcessing = true;
     switch (actionToRedo.type) {
       case "addObject":
-        this.redoAddObject(actionToRedo);
+        await this.redoAddObject(actionToRedo);
         break;
       case "removeObject": {
         this.redoRemoveObject(actionToRedo);
         break;
       }
       case "modifyObject": {
+        console.log('redo modify object');
         if (
           (!actionToRedo.objectID && !actionToRedo.objectIDs) ||
           !actionToRedo.previousProperties
@@ -370,7 +368,7 @@ class FabricHistory {
     this.canvas.add(restoredObject);
   }
 
-  private async redoRemoveObject(actionToRedo: HistoryAction) {
+  private redoRemoveObject(actionToRedo: HistoryAction) {
     // redo remove object -> remove
     if (!actionToRedo.objectID) {
       console.error("could not redo action", actionToRedo);

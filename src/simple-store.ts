@@ -9,7 +9,6 @@ class SimpleElectronStore {
   constructor(fileName: string = 'store.json') {
     const userDataPath =  app.getPath('userData');
     this.filePath = path.join(userDataPath, fileName);
-    console.log(this.filePath);
 
     try {
       // Try to read the file and parse it as JSON
