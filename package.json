@@ -8,7 +8,7 @@
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "publish": "electron-forge publish",
+    "publish": "env-cmd electron-forge publish",
     "lint": "eslint --ext .ts,.tsx ."
   },
   "devDependencies": {
@@ -42,6 +42,7 @@
   "dependencies": {
     "changedpi": "^1.0.4",
     "electron-squirrel-startup": "^1.0.1",
+    "env-cmd": "^10.1.0",
     "fabric": "^6.0.2",
     "update-electron-app": "^3.0.0",
     "uuid": "^10.0.0"
