@@ -1,48 +1,46 @@
-import type { ForgeConfig } from '@electron-forge/shared-types';
-import { MakerSquirrel } from '@electron-forge/maker-squirrel';
-import { MakerZIP } from '@electron-forge/maker-zip';
-import { MakerDeb } from '@electron-forge/maker-deb';
-import { MakerRpm } from '@electron-forge/maker-rpm';
-import { VitePlugin } from '@electron-forge/plugin-vite';
-import { FusesPlugin } from '@electron-forge/plugin-fuses';
-import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import type { ForgeConfig } from "@electron-forge/shared-types";
+import { MakerSquirrel } from "@electron-forge/maker-squirrel";
+import { MakerZIP } from "@electron-forge/maker-zip";
+import { MakerDeb } from "@electron-forge/maker-deb";
+import { MakerRpm } from "@electron-forge/maker-rpm";
+import { VitePlugin } from "@electron-forge/plugin-vite";
+import { FusesPlugin } from "@electron-forge/plugin-fuses";
+import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
-console.log('HIIIIII', process.env.APPLE_ID);
+console.log("NEW THING", process.env.APPLE_ID);
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
     osxSign: {
-      identity: `Apple Development: ${process.env.APPLE_SIGN_ID_NAME} (${process.env.APPLE_SIGN_ID})`,
+      identity: `Developer ID Application: ${process.env.APPLE_SIGN_ID_NAME} (${process.env.APPLE_SIGN_ID})`,
     },
     osxNotarize: {
       appleId: process.env.APPLE_ID,
       appleIdPassword: process.env.APPLE_PASSWORD,
-      teamId: process.env.TEAM_ID
-    }
+      teamId: process.env.TEAM_ID,
+    },
   },
   rebuildConfig: {},
-  "makers": [
+  makers: [
     {
-      "name": "@electron-forge/maker-squirrel",
-      "config": {
-        "name": "electron_publish_example"
-      }
+      name: "@electron-forge/maker-squirrel",
+      config: {
+        name: "electron_publish_example",
+      },
     },
     {
-      "name": "@electron-forge/maker-zip",
-      "config": {},
-      "platforms": [
-        "darwin"
-      ]
+      name: "@electron-forge/maker-zip",
+      config: {},
+      platforms: ["darwin"],
     },
     {
-      "name": "@electron-forge/maker-deb",
-      "config": {}
+      name: "@electron-forge/maker-deb",
+      config: {},
     },
     {
-      "name": "@electron-forge/maker-rpm",
-      "config": {}
-    }
+      name: "@electron-forge/maker-rpm",
+      config: {},
+    },
   ],
 
   plugins: [
@@ -52,18 +50,18 @@ const config: ForgeConfig = {
       build: [
         {
           // `entry` is just an alias for `build.lib.entry` in the corresponding file of `config`.
-          entry: 'src/main.ts',
-          config: 'vite.main.config.ts',
+          entry: "src/main.ts",
+          config: "vite.main.config.ts",
         },
         {
-          entry: 'src/preload.ts',
-          config: 'vite.preload.config.ts',
+          entry: "src/preload.ts",
+          config: "vite.preload.config.ts",
         },
       ],
       renderer: [
         {
-          name: 'main_window',
-          config: 'vite.renderer.config.ts',
+          name: "main_window",
+          config: "vite.renderer.config.ts",
         },
       ],
     }),
@@ -81,16 +79,16 @@ const config: ForgeConfig = {
   ],
   publishers: [
     {
-      name: '@electron-forge/publisher-github',
+      name: "@electron-forge/publisher-github",
       config: {
         repository: {
-          owner: 'vrk',
-          name: 'big-printer-pal'
+          owner: "vrk",
+          name: "big-printer-pal",
         },
-        prerelease: true
-      }
-    }
-  ]
+        prerelease: true,
+      },
+    },
+  ],
 };
 
 export default config;
