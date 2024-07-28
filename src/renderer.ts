@@ -19,7 +19,7 @@ import {
 } from "fabric";
 import { changeDpiDataUrl } from "changedpi";
 import FabricHistory from "./fabric-history";
-import { setEditableObjectProperties }  from "./util";
+import { setEditableObjectProperties } from "./util";
 
 // TODO: Check out https://codepen.io/janih/pen/EjaNXP for snap to grid
 
@@ -109,7 +109,7 @@ async function main() {
 }
 
 function addCanvasEventListeners() {
-  console.log('adding event listeners!');
+  console.log("adding event listeners!");
   canvas.on("mouse:wheel", onMouseWheel);
   canvas.on("mouse:down", onMouseDown);
   canvas.on("mouse:move", onMouseMove);
@@ -121,7 +121,7 @@ function addCanvasEventListeners() {
 }
 
 function removeCanvasEventListeners() {
-  console.log('removing event listeners!');
+  console.log("removing event listeners!");
   disablePaperSettingsBox();
   disableSettingsBoxForActiveObject();
   canvas.off("mouse:wheel", onMouseWheel);
@@ -175,14 +175,14 @@ async function loadSnapshotData(loadedData: any) {
 function addGrid() {
   const grid = createGridGroup(documentRectangle);
   canvas.add(grid);
-  grid.getObjects().forEach(o => canvas.sendObjectToBack(o));
+  grid.getObjects().forEach((o) => canvas.sendObjectToBack(o));
   canvas.sendObjectToBack(grid);
   canvas.sendObjectToBack(documentRectangle);
   canvas.discardActiveObject();
 }
 
 function removeGrid() {
-  const gridObj = canvas.getObjects().find(o => o.id === BACKGROUND_GRID_ID);
+  const gridObj = canvas.getObjects().find((o) => o.id === BACKGROUND_GRID_ID);
   const gridObjectAsGroup = gridObj as Group;
   for (const innerObj of gridObjectAsGroup.getObjects()) {
     canvas.remove(innerObj);
@@ -233,22 +233,22 @@ async function createNewCanvas() {
 
 function createGridGroup(rect) {
   const objects: Array<FabricObject> = [];
-  const smallerStrokeWidth =  0.01 * ppi;
-  const biggerStrokeWidth =  0.015 * ppi;
+  const smallerStrokeWidth = 0.01 * ppi;
+  const biggerStrokeWidth = 0.015 * ppi;
   const dashLength = 0.1 * ppi;
   const lineParams = {
-      selectable: false,
-      excludeFromExport: true,
-      hasControls: false,
-      hasBorders: false,
-      evented: false,
-      objectCaching: false
-  }
+    selectable: false,
+    excludeFromExport: true,
+    hasControls: false,
+    hasBorders: false,
+    evented: false,
+    objectCaching: false,
+  };
   const solidColor = `rgba(216, 205, 178, 1)`;
   const dashColor = `rgba(216, 205, 178, 0.5)`;
 
   // Draw dashed grids
-  const halfSize = (ppi) / 2;
+  const halfSize = ppi / 2;
   for (let line = 0; line < rect.width / ppi - 1; line++) {
     const lineObj = new Line([0, 0, 0, DEFAULT_DOC_HEIGHT], {
       left: halfSize + line * ppi - smallerStrokeWidth,
@@ -258,10 +258,9 @@ function createGridGroup(rect) {
       strokeWidth: smallerStrokeWidth,
       ...lineParams,
     });
-   
+
     objects.push(lineObj);
   }
-  
 
   for (let line = 0; line < rect.height / ppi; line++) {
     const lineObj = new Line([0, 0, DEFAULT_DOC_WIDTH, 0], {
@@ -274,7 +273,6 @@ function createGridGroup(rect) {
     });
     objects.push(lineObj);
   }
-  
 
   // Draw solid grids
   for (let line = 1; line < rect.width / ppi; line++) {
@@ -301,7 +299,7 @@ function createGridGroup(rect) {
     top: documentRectangle.top,
     width: documentRectangle.width,
     height: documentRectangle.height,
-    ...lineParams
+    ...lineParams,
   });
   gridGroup.id = BACKGROUND_GRID_ID;
   return gridGroup;
@@ -526,26 +524,24 @@ function onObjectMoving({ target }) {
   //   }
   //   if ((gridSize - (yDistance + object.height) % gridSize) < SNAP_SIZE) {
   //     object.top +=  (gridSize - (yDistance + object.height) % gridSize);
-  //   } 
+  //   }
   //   if (xDistance % gridSize < SNAP_SIZE) {
   //     object.left -= xDistance % gridSize;
-  //   } 
+  //   }
   //   if ((xDistance + object.width) % gridSize < SNAP_SIZE) {
   //     object.left -=  (xDistance + object.width) % gridSize;
-  //   } 
+  //   }
   //   object.setCoords();
   // }
   if (insideDocument && shiftPressed) {
     object.set({
       left: Math.round(object.left / gridSize) * gridSize,
-      top: Math.round(object.top / gridSize) * gridSize
+      top: Math.round(object.top / gridSize) * gridSize,
     });
   }
   matchInputsToObjectValues(target);
   canvas.renderAll();
 }
-
-
 
 document.addEventListener("keydown", function (event) {
   if (event.key == "Shift") {
@@ -561,7 +557,7 @@ document.addEventListener("keydown", function (event) {
 document.addEventListener("keyup", function (event) {
   if (event.key == "Shift") {
     shiftPressed = false;
-  }else if (event.key === " ") {
+  } else if (event.key === " ") {
     spacebarPressed = false;
     if (lastScenePoint && documentRectangle.containsPoint(lastScenePoint)) {
       canvas.setCursor("default");
@@ -592,7 +588,7 @@ addImageButton.addEventListener("click", async () => {
     return; // canceled
   }
   const url = `data:image/png;base64,${base64}`;
-  addImageToCanvas(url);
+  await addImageToCanvas(url);
 });
 
 async function addImageToCanvas(dataUrl) {
@@ -600,41 +596,67 @@ async function addImageToCanvas(dataUrl) {
   addFabricObjectToCanvas(image);
 }
 
-
 async function onPaste(e: ClipboardEvent) {
-  e.preventDefault();
+  const clipboardItems = [];
   for (const item of e.clipboardData.items) {
-    if (item.type.startsWith("image/")) {
-      const file = item.getAsFile();
-      if (!file) {
-        continue;
-      }
-      const objectUrl = URL.createObjectURL(file);
-      addImageToCanvas(objectUrl);
-    } else if (item.type.startsWith("text/plain")) {
-      item.getAsString(async (text) => {
-        try {
-          const parsed = JSON.parse(text);
-          if (!parsed.type) {
-            return;
-          }
-          if (parsed.type.toLowerCase() === "activeselection") {
-            // We've got multiple items, so let's recreate the selection group
-            const objects = await util.enlivenObjects<FabricObject>(
-              parsed.objects
-            );
-            addObjectGroupToCanvas(objects);
-          } else {
-            const [object] = await util.enlivenObjects<FabricObject>([parsed]);
-            if (!object) {
-              return;
-            }
-            addFabricObjectToCanvas(object);
-          }
-        } catch {}
-      });
-    }
+    clipboardItems.push(item);
   }
+
+  // First process image clipboard items
+  const imageItems = clipboardItems.filter((item) =>
+    item.type.startsWith("image/")
+  );
+  let handledImage = false;
+  for (const item of imageItems) {
+    const file = item.getAsFile();
+    if (!file) {
+      continue;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    await addImageToCanvas(objectUrl);
+    handledImage = true;
+  }
+  if (handledImage) {
+    return false;
+  }
+
+  // Now process text clipboard items
+  const textItems = clipboardItems.filter((item) =>
+    item.type.startsWith("text/plain")
+  );
+  if (textItems.length === 0) {
+    return true;
+  }
+  for (const item of textItems) {
+    const text = await getTextItemAsString(item);
+    try {
+      const parsed = JSON.parse(text);
+      if (!parsed.type) {
+        return true;
+      }
+
+      if (parsed.type.toLowerCase() === "activeselection") {
+        // We've got multiple items, so let's recreate the selection group
+        const objects = await util.enlivenObjects<FabricObject>(parsed.objects);
+        addObjectGroupToCanvas(objects);
+      } else {
+        const [object] = await util.enlivenObjects<FabricObject>([parsed]);
+        if (!object) {
+          return;
+        }
+        addFabricObjectToCanvas(object);
+      }
+      return true;
+    } catch {}
+  }
+}
+
+function getTextItemAsString(item: DataTransferItem): Promise<string> {
+  return new Promise((resolve) => {
+    item.getAsString((text) => {
+      resolve(text);
+    });
+  });
 }
 
 function addFabricObjectToCanvas(object: FabricObject) {
@@ -660,13 +682,17 @@ function addObjectGroupToCanvas(objects: Array<FabricObject>) {
   onDocEdit();
 }
 
-function handleLocalCopy() {
+async function handleLocalCopy() {
+  const selection = window.getSelection();
+  console.log('selection is', selection, selection.toString())
+  if (selection !== null && selection.type !== 'None') {
+    return navigator.clipboard.writeText(selection.toString());
+  }
+
   const activeObject = canvas.getActiveObject();
   if (!activeObject) {
     return;
   }
-  // TODO ugh hack
-
   const copy = activeObject.toObject(PROPERTIES_TO_INCLUDE);
   delete copy.id;
   const objectAsJson = JSON.stringify(copy);
@@ -802,6 +828,7 @@ function onMouseDown(opt: TPointerEventInfo) {
   // Ignore clicks on doc or objects
   if (opt.target !== undefined && !spacebarPressed) {
     if (opt.target.selectable) {
+      canvas.setActiveObject(opt.target);
       enableSettingsBoxFor(opt.target);
     }
     return false;
@@ -841,7 +868,6 @@ function onMouseMove(opt) {
   onDocEdit();
 }
 
-
 function onMouseUp(opt: TPointerEventInfo) {
   isDragging = false;
   canvas.selection = true; // reenable selection after grab
@@ -851,9 +877,7 @@ function onMouseUp(opt: TPointerEventInfo) {
       opt.target === documentRectangle ||
       !opt.target.selectable)
   ) {
-    disableSettingsBoxForActiveObject(opt.target);
-  } else if (canvas.getActiveObject()) {
-    enableSettingsBoxFor(canvas.getActiveObject());
+    disableSettingsBoxForActiveObject();
   }
 }
 
@@ -910,7 +934,7 @@ paperHeightInput.addEventListener("input", () => {
   try {
     const value = parseFloat(paperHeightInput.value) * ppi;
     if (value) {
-      documentRectangle.set('height', value);
+      documentRectangle.set("height", value);
       canvas.clipPath = documentRectangle;
       onDocEdit();
       removeGrid();
@@ -958,9 +982,11 @@ function disablePaperSettingsBox() {
 }
 
 function enableSettingsBoxFor(object: FabricObject) {
+  console.log('enable settings', object);
   disablePaperSettingsBox();
   // Set initial values
   matchInputsToObjectValues(object);
+  activeInputController.abort();
   activeInputController = new AbortController();
   const { signal } = activeInputController;
 
@@ -970,6 +996,7 @@ function enableSettingsBoxFor(object: FabricObject) {
   objectWidthInput.addEventListener(
     "input",
     (e) => {
+      console.log('hi width input for', e);
       setScaledWidth(object, e.currentTarget.value);
     },
     { signal }
@@ -999,6 +1026,7 @@ function enableSettingsBoxFor(object: FabricObject) {
 }
 
 function disableSettingsBoxForActiveObject() {
+  console.log('disable settings');
   activeInputController.abort();
   canvas.discardActiveObject();
   settingsBox.hidden = true;

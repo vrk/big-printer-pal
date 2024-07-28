@@ -80,7 +80,7 @@ function buildMenu(mainWindow) {
           // role: "halp",
           label: "Copy",
           accelerator: "CommandOrControl+C",
-          click: () => {
+          click: (e) => {
             mainWindow.webContents.send('system:local-copy');
           },
         },
