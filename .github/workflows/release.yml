@@ -24,9 +24,9 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-node@master
+    - uses: actions/setup-node@v4
       with:
-        node-version: 14
+        node-version: "14.17.3"
         architecture: 'x64'
     - name: install dependencies
       run: npm install
