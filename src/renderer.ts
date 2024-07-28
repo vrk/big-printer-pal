@@ -636,12 +636,14 @@ async function onPaste(e: ClipboardEvent) {
       if (parsed.type.toLowerCase() === "activeselection") {
         // We've got multiple items, so let's recreate the selection group
         const objects = await util.enlivenObjects<FabricObject>(parsed.objects);
+        objects.forEach(obj => delete obj.id);
         addObjectGroupToCanvas(objects);
       } else {
         const [object] = await util.enlivenObjects<FabricObject>([parsed]);
         if (!object) {
           return;
         }
+        delete object.id;
         addFabricObjectToCanvas(object);
       }
       return true;
@@ -691,7 +693,11 @@ async function handleLocalCopy() {
     return;
   }
   const copy = activeObject.toObject(PROPERTIES_TO_INCLUDE);
-  delete copy.id;
+  if (copy.type.toLowerCase() === 'activeselection') {
+    copy.getObjects().forEach(obj => delete obj.id);
+  } else {
+    delete copy.id;
+  }
   const objectAsJson = JSON.stringify(copy);
   return navigator.clipboard.writeText(objectAsJson);
 }
