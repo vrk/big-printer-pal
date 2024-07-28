@@ -12,11 +12,10 @@ console.log("NEW THING", process.env.APPLE_SIGN_ID);
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    osxSign: true,
-    // osxSign: {
-      // identity: `Developer ID Application: ${process.env.APPLE_SIGN_ID_NAME} (${process.env.APPLE_SIGN_ID})`,
+    osxSign: {
+      identity: `Developer ID Application: ${process.env.APPLE_SIGN_ID_NAME} (${process.env.APPLE_SIGN_ID})`,
 
-    // },
+    },
     osxNotarize: {
       appleId: process.env.APPLE_ID,
       appleIdPassword: process.env.APPLE_PASSWORD,
