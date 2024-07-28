@@ -1,11 +1,7 @@
 import {
   Canvas,
   ActiveSelection,
-  Control,
-  Group,
-  BasicTransformEvent,
   Transform,
-  controlsUtils,
   util,
   FabricObject,
 } from "fabric";
@@ -53,9 +49,6 @@ class FabricHistory {
   private historyProcessing = false;
   private canvas: Canvas;
   private beforeTransformProperties: BeforeTransformProperties = {};
-  private static get EXTRA_PROPS(): Array<string> {
-    return ["selectable", "editable"];
-  }
   private canvasEventHandlers;
   constructor(canvas: Canvas) {
     this.canvas = canvas;
