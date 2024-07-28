@@ -33,8 +33,8 @@ jobs:
     - name: publish
       uses: apple-actions/import-codesign-certs@v3
         with:
-        p12-file-base64: ${{ secrets.CERTIFICATES_P12 }}
-        p12-password: ${{ secrets.CERTIFICATES_P12_PASSWORD }}
+          p12-file-base64: ${{ secrets.CERTIFICATES_P12 }}
+          p12-password: ${{ secrets.CERTIFICATES_P12_PASSWORD }}
       env:
         DEBUG: electron-packager*,*osx-sign*
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
