@@ -6,17 +6,10 @@ import { MakerRpm } from "@electron-forge/maker-rpm";
 import { VitePlugin } from "@electron-forge/plugin-vite";
 import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
-import {minify} from 'minify';
 
 
 console.log("NEW THING", process.env.APPLE_ID);
 const config: ForgeConfig = {
-  hooks: {
-    packageAfterCopy: async (forgeConfig, build_path) => {
-      console.log(`\nBuild Path: ${build_path}`);
-      await minify(build_path + '/src');
-    },
-  },
   packagerConfig: {
     asar: true,
     osxSign: {
