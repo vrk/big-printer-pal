@@ -5,10 +5,10 @@
   "description": "My Electron application description",
   "main": ".vite/build/main.js",
   "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "publish": "env-cmd electron-forge publish",
+    "start": "dotenv electron-forge start",
+    "package": "dotenv electron-forge package",
+    "make": "dotenv electron-forge make",
+    "publish": "dotenv electron-forge publish",
     "lint": "eslint --ext .ts,.tsx ."
   },
   "devDependencies": {
@@ -42,6 +42,7 @@
   "license": "MIT",
   "dependencies": {
     "changedpi": "^1.0.4",
+    "dotenv-cli": "^7.4.2",
     "electron-squirrel-startup": "^1.0.1",
     "env-cmd": "^10.1.0",
     "fabric": "^6.0.2",

@@ -8,18 +8,22 @@ import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
 
-console.log("try no asar", process.env.APPLE_ID, process.env.TEAM_ID);
+console.log("NEW THING", process.env.APPLE_SIGN_ID);
 const config: ForgeConfig = {
   packagerConfig: {
-    osxSign: {
-      identity: `Developer ID Application: ${process.env.APPLE_SIGN_ID_NAME} (${process.env.APPLE_SIGN_ID})`,
-    },
+    asar: true,
+    osxSign: true,
+    // osxSign: {
+      // identity: `Developer ID Application: ${process.env.APPLE_SIGN_ID_NAME} (${process.env.APPLE_SIGN_ID})`,
+
+    // },
     osxNotarize: {
       appleId: process.env.APPLE_ID,
       appleIdPassword: process.env.APPLE_PASSWORD,
       teamId: process.env.TEAM_ID,
     },
   },
+  rebuildConfig: {},
   makers: [
     {
       name: "@electron-forge/maker-squirrel",
@@ -70,7 +74,7 @@ const config: ForgeConfig = {
       version: FuseVersion.V1,
       [FuseV1Options.RunAsNode]: false,
       [FuseV1Options.EnableCookieEncryption]: true,
-      [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
+      [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: true,
       [FuseV1Options.EnableNodeCliInspectArguments]: false,
       [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
