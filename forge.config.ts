@@ -12,7 +12,30 @@ const config: ForgeConfig = {
     asar: true,
   },
   rebuildConfig: {},
-  makers: [new MakerZIP({}, ['darwin'])],
+  "makers": [
+    {
+      "name": "@electron-forge/maker-squirrel",
+      "config": {
+        "name": "electron_publish_example"
+      }
+    },
+    {
+      "name": "@electron-forge/maker-zip",
+      "config": {}
+      "platforms": [
+        "darwin"
+      ]
+    },
+    {
+      "name": "@electron-forge/maker-deb",
+      "config": {}
+    },
+    {
+      "name": "@electron-forge/maker-rpm",
+      "config": {}
+    }
+  ],
+
   plugins: [
     new VitePlugin({
       // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.
