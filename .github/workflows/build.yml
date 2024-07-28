@@ -26,6 +26,13 @@ jobs:
     - name: install dependencies
       run: npm install
     - name: build
+      env:
+        DEBUG: electron-notarize*
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APPLE_SIGN_ID_NAME: ${{ secrets.APPLE_SIGN_ID_NAME }}
+        APPLE_SIGN_ID: ${{ secrets.APPLE_SIGN_ID }}
+        APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+        TEAM_ID: ${{ secrets.TEAM_ID }}
       run: npm run make
       
   build_on_win:

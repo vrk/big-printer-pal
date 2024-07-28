@@ -8,7 +8,7 @@ import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
 
-console.log("try no asar", process.env.APPLE_ID);
+console.log("try no asar", process.env.APPLE_ID, process.env.TEAM_ID);
 const config: ForgeConfig = {
   packagerConfig: {
     osxSign: {
@@ -20,7 +20,6 @@ const config: ForgeConfig = {
       teamId: process.env.TEAM_ID,
     },
   },
-  rebuildConfig: {},
   makers: [
     {
       name: "@electron-forge/maker-squirrel",
