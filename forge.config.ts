@@ -8,10 +8,9 @@ import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
 
-console.log("NEW THING", process.env.APPLE_ID);
+console.log("try no asar", process.env.APPLE_ID);
 const config: ForgeConfig = {
   packagerConfig: {
-    asar: true,
     osxSign: {
       identity: `Developer ID Application: ${process.env.APPLE_SIGN_ID_NAME} (${process.env.APPLE_SIGN_ID})`,
     },
