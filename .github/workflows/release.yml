@@ -33,11 +33,6 @@ jobs:
     - name: publish
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        APPLE_SIGN_ID_NAME: ${{ secrets.APPLE_SIGN_ID_NAME }}
-        APPLE_SIGN_ID: ${{ secrets.APPLE_SIGN_ID }}
-        APPLE_ID: ${{ secrets.APPLE_ID }}
-        APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-        TEAM_ID: ${{ secrets.TEAM_ID }}
       run: npm run publish
       
   publish_on_win:
