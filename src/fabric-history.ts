@@ -71,14 +71,12 @@ class FabricHistory {
   clearHistory() {
     this.historyUndo = [];
     this.historyRedo = [];
-    console.log('clear history');
   }
 
   removeListeners() {
     this.canvas.off(this.canvasEventHandlers);
     this.historyUndo = [];
     this.historyRedo = [];
-    console.log('clear history 2');
   }
 
   private historyCacheProperties({ e, transform }) {
@@ -92,7 +90,6 @@ class FabricHistory {
       return;
     }
     this.historyRedo = [];
-    console.log('history even tlcera history');
     const action = this.getHistoryAction(objectEvent, type);
     this.historyUndo.push(action);
   }
@@ -172,7 +169,6 @@ class FabricHistory {
   }
 
   async undo() {
-    console.log('undoing');
     if (this.historyUndo.length === 0) {
       return;
     }
@@ -299,14 +295,11 @@ class FabricHistory {
   }
 
   async redo() {
-    console.log('redoing', this.historyRedo);
     if (this.historyRedo.length === 0) {
-      console.log('early return');
       return;
     }
 
     const actionToRedo = this.historyRedo.pop();
-    console.log(actionToRedo.type);
 
     // And then redo that last action
     this.historyProcessing = true;
@@ -319,7 +312,6 @@ class FabricHistory {
         break;
       }
       case "modifyObject": {
-        console.log('redo modify object');
         if (
           (!actionToRedo.objectID && !actionToRedo.objectIDs) ||
           !actionToRedo.previousProperties
