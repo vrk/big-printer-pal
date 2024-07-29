@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-node@master
         with:
           node-version: 21
-          architecture: "x64"
+          architecture: "arm64"
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
