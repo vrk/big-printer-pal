@@ -174,6 +174,8 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     show: false,
     webPreferences: {
+      // contextIsolation: false,
+      // nodeIntegration: true,  
       preload: path.join(__dirname, "preload.js"),
     },
   });

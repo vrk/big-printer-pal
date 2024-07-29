@@ -7,8 +7,6 @@ import { VitePlugin } from "@electron-forge/plugin-vite";
 import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
-
-console.log("NEW THING", process.env.APPLE_SIGN_ID);
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
