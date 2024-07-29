@@ -5,6 +5,7 @@ import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
 const config: ForgeConfig = {
   packagerConfig: {
+    executableName: "printer-pal",
     name: 'Printer Pal',
     asar: true,
     icon: './src/app_images/appicon',
@@ -51,7 +52,9 @@ const config: ForgeConfig = {
       name: "@electron-forge/maker-deb",
       config: {
         options: {
-          icon: './src/app_images/appicon.png'
+          icon: './src/app_images/appicon.png',
+          name: 'printer-pal',
+          productName: 'printer-pal'
         }
       },
     },

@@ -13,9 +13,7 @@ jobs:
         with:
           node-version: 21
       - name: install dependencies
-        run: |
-          python3 -m pip install setuptools
-          npm install
+        run: npm install
       - name: publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
