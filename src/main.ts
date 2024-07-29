@@ -2,13 +2,14 @@ import { app, BrowserWindow, Menu, dialog, ipcMain, webContents } from "electron
 import path from "path";
 import fs from "fs";
 import SimpleElectronStore from "./simple-store";
+import { updateElectronApp } from "update-electron-app";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
 
-require('update-electron-app')()
+updateElectronApp();
 
 const isMac = process.platform === "darwin";
 const LAST_SAVED_FILE_PATH_KEY = "__last_opened_file__";
