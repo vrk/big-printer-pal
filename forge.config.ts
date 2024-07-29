@@ -1,18 +1,16 @@
 import type { ForgeConfig } from "@electron-forge/shared-types";
-import { MakerSquirrel } from "@electron-forge/maker-squirrel";
-import { MakerZIP } from "@electron-forge/maker-zip";
-import { MakerDeb } from "@electron-forge/maker-deb";
-import { MakerRpm } from "@electron-forge/maker-rpm";
 import { VitePlugin } from "@electron-forge/plugin-vite";
 import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
 const config: ForgeConfig = {
   packagerConfig: {
+    name: 'Printer Pal',
     asar: true,
+    icon: './src/app_images/appicon',
+    appCategoryType: 'public.app-category.graphics-design',
     osxSign: {
       identity: `Developer ID Application: ${process.env.APPLE_SIGN_ID_NAME} (${process.env.APPLE_SIGN_ID})`,
-
     },
     osxNotarize: {
       appleId: process.env.APPLE_ID,
@@ -25,17 +23,37 @@ const config: ForgeConfig = {
     {
       name: "@electron-forge/maker-squirrel",
       config: {
-        name: "electron_publish_example",
+        noMsi: false,
+        iconUrl: "https://raw.githubusercontent.com/vrk/pouch.studio/main/images/appicon.ico",
+        setupIcon: './src/app_images/appicon.ico',
+        loadingGif: './src/app_images/installing.gif'
       },
     },
     {
-      name: "@electron-forge/maker-zip",
-      config: {},
-      platforms: ["darwin"],
+      name: '@electron-forge/maker-dmg',
+      config: {
+        name: "Printer Pal",
+        background: './src/app_images/installer-bg.png',
+        format: 'ULFO',
+        icon: './src/app_images/appicon.icns',
+        overwrite: true,
+        additionalDMGOptions: {
+          window: {
+            size: {
+              width: 658,
+              height: 498
+            }
+          }
+        }
+      }
     },
     {
       name: "@electron-forge/maker-deb",
-      config: {},
+      config: {
+        options: {
+          icon: './src/app_images/appicon.png'
+        }
+      },
     },
     {
       name: "@electron-forge/maker-rpm",

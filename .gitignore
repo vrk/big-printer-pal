@@ -90,3 +90,6 @@ typings/
 
 # Electron-Forge
 out/
+
+# Cert files
+*.p12

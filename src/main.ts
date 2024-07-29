@@ -173,6 +173,7 @@ function buildMenu(mainWindow) {
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
+    icon: './app_images/appicon.png',
     show: false,
     webPreferences: {
       // contextIsolation: false,
