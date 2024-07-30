@@ -463,20 +463,18 @@ let shiftPressed = false;
 function onMouseWheel(opt) {
   opt.e.preventDefault();
   opt.e.stopPropagation();
-  requestAnimationFrame(() => {
-    const delta = opt.e.deltaY;
-    if (altKeyPressed) {
-      zoomByDelta(delta);
-    } else {
-      // pan up and down
+  const delta = opt.e.deltaY;
+  if (altKeyPressed) {
+    zoomByDelta(delta);
+  } else {
+    // pan up and down
 
-      const vpt = this.viewportTransform;
-      vpt[5] -= delta;
-      canvas.setViewportTransform(vpt);
-      enclose(canvas, documentRectangle);
-      canvas.requestRenderAll();
-    }
-  });
+    const vpt = this.viewportTransform;
+    vpt[5] -= delta;
+    canvas.setViewportTransform(vpt);
+    enclose(canvas, documentRectangle);
+    canvas.requestRenderAll();
+  }
 }
 
 function onObjectAdded({ target }) {
