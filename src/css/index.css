@@ -23,13 +23,14 @@ main {
 #main-nav {
   background-color: white;
   border: 3px solid #4B624C;
-  padding: 18px 28px;
-  font-size: 32px;
+  padding: 12px;
+  font-size: 24px;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
   margin: 18px;
+  margin-bottom: 0;
 }
 
 #left-nav {
@@ -139,7 +140,7 @@ button.nav-button {
   background: none;
   border: none;
   font-family: 'Nunito';
-  font-size: 32px;
+  font-size: 24px;
   display: block;
   border-radius: 100px;
   padding: 2px 18px

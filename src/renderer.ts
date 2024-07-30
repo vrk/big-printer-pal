@@ -2,19 +2,13 @@ import "./css/index.css";
 import {
   ActiveSelection,
   Canvas,
-  Control,
   Group,
   Rect,
   util,
   FabricObject,
   FabricImage,
-  Point,
   Line,
   ImageFormat,
-  Intersection,
-  LayoutManager,
-  controlsUtils,
-  ClipPathLayout,
   TPointerEventInfo,
 } from "fabric";
 import { changeDpiDataUrl } from "changedpi";
@@ -336,7 +330,7 @@ function setCanvasDimensionsToWindowSize() {
 
 function zoomToFitDocument() {
   const center = canvas.getCenterPoint();
-  let scale = util.findScaleToFit(documentRectangle, canvas) * 0.9; // TODO: fix eyeballing
+  const scale = util.findScaleToFit(documentRectangle, canvas) * 0.9; // TODO: fix eyeballing
   canvas.zoomToPoint(center, scale);
   setCenterFromObject(documentRectangle);
   canvas.requestRenderAll();
