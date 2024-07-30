@@ -586,6 +586,7 @@ function moveSelectedByArrow(type: ArrowKeyString) {
   active.set(moveData.field, moveData.newValue);
   active.setCoords();
   matchInputsToObjectValues(active);
+  onDocEdit();
   canvas.requestRenderAll();
 }
 
@@ -918,7 +919,6 @@ function onMouseMove(opt) {
   lastPosX = clientX;
   lastPosY = clientY;
   enclose(canvas, documentRectangle);
-  onDocEdit();
 }
 
 function onMouseUp(opt: TPointerEventInfo) {
@@ -1092,6 +1092,7 @@ function setScaledWidth(object: FabricObject, newWidthInput: string) {
       });
       object.scaleToWidth(value);
       objectHeightInput.value = getScaledHeightInInches(object);
+      onDocEdit();
       canvas.requestRenderAll();
     } else {
       throw new Error(`invalid value ${value}`);
@@ -1112,6 +1113,7 @@ function setScaledHeight(object: FabricObject, newHeightInput: string) {
       });
       object.scaleToHeight(value);
       objectWidthInput.value = getScaledWidthInInches(object);
+      onDocEdit();
       canvas.requestRenderAll();
     } else {
       throw new Error(`invalid value ${value}`);
@@ -1134,6 +1136,7 @@ function setObjectX(object: FabricObject, newXInput: string) {
       object.setCoords();
       canvas.requestRenderAll();
     }
+    onDocEdit();
   } catch (e) {
     console.log(e);
     objectXInput.value = getObjectXInInches(object);
@@ -1152,6 +1155,7 @@ function setObjectY(object: FabricObject, newYInput: string) {
       object.setCoords();
       canvas.requestRenderAll();
     }
+    onDocEdit();
   } catch (e) {
     console.log(e);
     objectYInput.value = getObjectYInInches(object);
