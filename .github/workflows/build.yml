@@ -43,7 +43,7 @@ jobs:
         run: npm run make
 
   publish_on_mac_intel:
-    runs-on: macos-14
+    runs-on: macos-14-large
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@master
@@ -68,7 +68,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           TEAM_ID: ${{ secrets.TEAM_ID }}
-        run: npm run publish
+        run: npm run publish -- --arch=x64
 
   build_on_win:
     runs-on: windows-latest

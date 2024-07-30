@@ -39,6 +39,7 @@ const config: ForgeConfig = {
           background: './src/app_images/installer-bg.png',
           format: 'ULFO',
           icon: './src/app_images/appicon.icns',
+          overwrite: true,
           additionalDMGOptions: {
             window: {
               size: {
