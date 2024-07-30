@@ -495,7 +495,6 @@ function onObjectRemoved({ target }) {
 }
 
 function onObjectMoving({ target }) {
-  console.log("moving!");
   const object = target as FabricObject;
   const gridSize = ppi / 8;
 
@@ -604,15 +603,7 @@ document.addEventListener("keydown", function (event) {
 });
 
 document.addEventListener("keyup", function (event) {
-  if (event.key == "ArrowLeft") {
-    console.log("Left key");
-  } else if (event.key == "ArrowRight") {
-    console.log("Right key");
-  } else if (event.key == "ArrowUp") {
-    console.log("up key");
-  } else if (event.key == "ArrowDown") {
-    console.log("down key");
-  } else if (event.key == "Shift") {
+  if (event.key == "Shift") {
     shiftPressed = false;
   } else if (event.key === " ") {
     spacebarPressed = false;
@@ -743,7 +734,6 @@ function addObjectGroupToCanvas(objects: Array<FabricObject>) {
 
 async function handleLocalCopy() {
   const selection = window.getSelection();
-  console.log('copy', selection);
   if (selection !== null && selection.type === "Range") {
     return navigator.clipboard.writeText(selection.toString());
   }

@@ -78,7 +78,6 @@ class FabricHistory {
   }
 
   private onMyHistoryEvent(type: ModificationType, objectEvent: any) {
-    console.log('add modified event', type, objectEvent);
     const target = objectEvent.target as FabricObject;
     if (this.historyProcessing || target.excludeFromExport) {
       return;
