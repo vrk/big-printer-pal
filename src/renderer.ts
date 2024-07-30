@@ -486,9 +486,7 @@ function onObjectAdded({ target }) {
 }
 
 function onObjectModified({ target }) {
-  console.log('modified!');
   onDocEdit();
-  matchInputsToObjectValues(target);
 }
 
 function onObjectRemoved({ target }) {
@@ -536,59 +534,62 @@ function onObjectMoving({ target }) {
   canvas.renderAll();
 }
 
-function moveSelectedLeft() {
-  const active = canvas.getActiveObject();
-  if (!active) {
-    return;
-  }
-  canvasHistory.addManualObjectModifiedEvent(active, {left: active.left});
-  active.set('left', active.left - 1);
-  active.setCoords();
-  canvas.requestRenderAll();
+type ArrowKeyString = "ArrowLeft"|"ArrowRight"|"ArrowUp"|"ArrowDown";
+function isArrowKey(keyInput: string): keyInput is ArrowKeyString {
+  return ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(keyInput);
 }
 
-function moveSelectedRight() {
-  const active = canvas.getActiveObject();
-  if (!active) {
-    return;
-  }
-  canvasHistory.addManualObjectModifiedEvent(active, {left: active.left});
-  active.set('left', active.left + 1);
-  active.setCoords();
-  canvas.requestRenderAll();
+type ArrowMoveData = {
+  field: "top"|"left",
+  previousValue: number,
+  newValue: number
 }
-
-function moveSelectedUp() {
-  const active = canvas.getActiveObject();
-  if (!active) {
-    return;
+function getMoveData(object: FabricObject, type: ArrowKeyString): ArrowMoveData {
+  switch (type) {
+    case "ArrowLeft":
+      return {
+        field: 'left',
+        previousValue: object.left,
+        newValue: object.left - 1
+      }
+    case "ArrowRight":
+      return {
+        field: 'left',
+        previousValue: object.left,
+        newValue: object.left + 1
+      }
+    case "ArrowUp":
+      return {
+        field: 'top',
+        previousValue: object.top,
+        newValue: object.top - 1
+      }
+    case "ArrowDown":
+      return {
+        field: 'top',
+        previousValue: object.top,
+        newValue: object.top + 1
+      }
   }
-  canvasHistory.addManualObjectModifiedEvent(active, {top: active.top});
-  active.set('top', active.top - 1);
-  active.setCoords();
-  canvas.requestRenderAll();
 }
-
-function moveSelectedDown() {
+function moveSelectedByArrow(type: ArrowKeyString) {
   const active = canvas.getActiveObject();
   if (!active) {
     return;
   }
-  canvasHistory.addManualObjectModifiedEvent(active, {top: active.top});
-  active.set('top', active.top + 1);
+  const moveData = getMoveData(active, type);
+  const historyEvent: any = {};
+  historyEvent[moveData.field] = moveData.previousValue;
+  canvasHistory.addManualObjectModifiedEvent(active, historyEvent);
+  active.set(moveData.field, moveData.newValue);
   active.setCoords();
+  matchInputsToObjectValues(active);
   canvas.requestRenderAll();
 }
 
 document.addEventListener("keydown", function (event) {
-  if (event.key == "ArrowLeft") {
-    moveSelectedLeft();
-  } else if (event.key == "ArrowRight") {
-    moveSelectedRight();
-  } else if (event.key == "ArrowUp") {
-    moveSelectedUp();
-  } else if (event.key == "ArrowDown") {
-    moveSelectedDown();
+  if (isArrowKey(event.key)) {
+    moveSelectedByArrow(event.key);
   } else if (event.key == "Shift") {
     shiftPressed = true;
   } else if (event.key === " ") {
