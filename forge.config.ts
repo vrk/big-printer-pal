@@ -32,20 +32,26 @@ const config: ForgeConfig = {
     },
     {
       name: '@electron-forge/maker-dmg',
-      config: {
-        name: "Printer Pal",
-        background: './src/app_images/installer-bg.png',
-        format: 'ULFO',
-        icon: './src/app_images/appicon.icns',
-        overwrite: true,
-        additionalDMGOptions: {
-          window: {
-            size: {
-              width: 658,
-              height: 498
+      config: (arch: any) => {
+        console.log("returning config for", arch)
+        const dmgConfig = {
+          name: "Printer Pal",
+          background: './src/app_images/installer-bg.png',
+          format: 'ULFO',
+          icon: './src/app_images/appicon.icns',
+          additionalDMGOptions: {
+            window: {
+              size: {
+                width: 658,
+                height: 498
+              }
             }
           }
         }
+        if (arch === 'x64') {
+          dmgConfig.name = "Printer Pal (intel)"
+        }
+        return dmgConfig;
       }
     },
     {
