@@ -3,6 +3,12 @@
 
 ## Release stuff
 
+### Create a new git tag
+```
+npm version patch   # new patch version
+git push origin <tagname>
+```
+
 ### How to update a git tag
 
 ```
