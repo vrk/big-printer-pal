@@ -56,6 +56,10 @@ const config: ForgeConfig = {
       }
     },
     {
+      name: '@electron-forge/maker-zip',
+      config: { }
+    },
+    {
       name: "@electron-forge/maker-deb",
       config: {
         options: {
