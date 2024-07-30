@@ -495,7 +495,7 @@ function onObjectRemoved({ target }) {
 }
 
 function onObjectMoving({ target }) {
-  console.log('moving!');
+  console.log("moving!");
   const object = target as FabricObject;
   const gridSize = ppi / 8;
 
@@ -534,42 +534,45 @@ function onObjectMoving({ target }) {
   canvas.renderAll();
 }
 
-type ArrowKeyString = "ArrowLeft"|"ArrowRight"|"ArrowUp"|"ArrowDown";
+type ArrowKeyString = "ArrowLeft" | "ArrowRight" | "ArrowUp" | "ArrowDown";
 function isArrowKey(keyInput: string): keyInput is ArrowKeyString {
-  return ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(keyInput);
+  return ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(keyInput);
 }
 
 type ArrowMoveData = {
-  field: "top"|"left",
-  previousValue: number,
-  newValue: number
-}
-function getMoveData(object: FabricObject, type: ArrowKeyString): ArrowMoveData {
+  field: "top" | "left";
+  previousValue: number;
+  newValue: number;
+};
+function getMoveData(
+  object: FabricObject,
+  type: ArrowKeyString
+): ArrowMoveData {
   switch (type) {
     case "ArrowLeft":
       return {
-        field: 'left',
+        field: "left",
         previousValue: object.left,
-        newValue: object.left - 1
-      }
+        newValue: object.left - 1,
+      };
     case "ArrowRight":
       return {
-        field: 'left',
+        field: "left",
         previousValue: object.left,
-        newValue: object.left + 1
-      }
+        newValue: object.left + 1,
+      };
     case "ArrowUp":
       return {
-        field: 'top',
+        field: "top",
         previousValue: object.top,
-        newValue: object.top - 1
-      }
+        newValue: object.top - 1,
+      };
     case "ArrowDown":
       return {
-        field: 'top',
+        field: "top",
         previousValue: object.top,
-        newValue: object.top + 1
-      }
+        newValue: object.top + 1,
+      };
   }
 }
 function moveSelectedByArrow(type: ArrowKeyString) {
@@ -692,7 +695,7 @@ async function onPaste(e: ClipboardEvent) {
       if (parsed.type.toLowerCase() === "activeselection") {
         // We've got multiple items, so let's recreate the selection group
         const objects = await util.enlivenObjects<FabricObject>(parsed.objects);
-        objects.forEach(obj => delete obj.id);
+        objects.forEach((obj) => delete obj.id);
         addObjectGroupToCanvas(objects);
       } else {
         const [object] = await util.enlivenObjects<FabricObject>([parsed]);
@@ -740,7 +743,8 @@ function addObjectGroupToCanvas(objects: Array<FabricObject>) {
 
 async function handleLocalCopy() {
   const selection = window.getSelection();
-  if (selection !== null && selection.type !== 'None') {
+  console.log('copy', selection);
+  if (selection !== null && selection.type === "Range") {
     return navigator.clipboard.writeText(selection.toString());
   }
 
@@ -749,8 +753,8 @@ async function handleLocalCopy() {
     return;
   }
   const copy = activeObject.toObject(PROPERTIES_TO_INCLUDE);
-  if (copy.type.toLowerCase() === 'activeselection') {
-    copy.getObjects().forEach(obj => delete obj.id);
+  if (copy.type.toLowerCase() === "activeselection") {
+    copy.getObjects().forEach((obj) => delete obj.id);
   } else {
     delete copy.id;
   }
@@ -1092,6 +1096,10 @@ function setScaledWidth(object: FabricObject, newWidthInput: string) {
   try {
     const value = parseFloat(newWidthInput) * ppi;
     if (value) {
+      canvasHistory.addManualObjectModifiedEvent(object, {
+        scaleX: object.scaleX,
+        scaleY: object.scaleY,
+      });
       object.scaleToWidth(value);
       objectHeightInput.value = getScaledHeightInInches(object);
       canvas.requestRenderAll();
@@ -1108,6 +1116,10 @@ function setScaledHeight(object: FabricObject, newHeightInput: string) {
   try {
     const value = parseFloat(newHeightInput) * ppi;
     if (value) {
+      canvasHistory.addManualObjectModifiedEvent(object, {
+        scaleX: object.scaleX,
+        scaleY: object.scaleY,
+      });
       object.scaleToHeight(value);
       objectWidthInput.value = getScaledWidthInInches(object);
       canvas.requestRenderAll();
@@ -1123,6 +1135,9 @@ function setScaledHeight(object: FabricObject, newHeightInput: string) {
 function setObjectX(object: FabricObject, newXInput: string) {
   const topLeftOrigin = documentRectangle.aCoords.tl;
   try {
+    canvasHistory.addManualObjectModifiedEvent(object, {
+      left: object.left,
+    });
     const value = parseFloat(newXInput) * ppi + topLeftOrigin.x;
     if (value) {
       object.setX(value);
@@ -1138,6 +1153,9 @@ function setObjectX(object: FabricObject, newXInput: string) {
 function setObjectY(object: FabricObject, newYInput: string) {
   const topLeftOrigin = documentRectangle.aCoords.tl;
   try {
+    canvasHistory.addManualObjectModifiedEvent(object, {
+      top: object.top,
+    });
     const value = parseFloat(newYInput) * ppi + topLeftOrigin.y;
     if (value) {
       object.setY(value);

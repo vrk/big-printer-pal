@@ -78,6 +78,7 @@ class FabricHistory {
   }
 
   private onMyHistoryEvent(type: ModificationType, objectEvent: any) {
+    console.log('add modified event', type, objectEvent);
     const target = objectEvent.target as FabricObject;
     if (this.historyProcessing || target.excludeFromExport) {
       return;
@@ -138,8 +139,7 @@ class FabricHistory {
     this.historyUndo.push(action);
   }
 
-  public getManualObjectModifiedEvent(target: any, previousValues: Object): HistoryAction {
-    
+  private getManualObjectModifiedEvent(target: any, previousValues: Object): HistoryAction {
     if (!target.id && target.getObjects) {
       // We have a selection
       const ids = target.getObjects().map((o: any) => {
