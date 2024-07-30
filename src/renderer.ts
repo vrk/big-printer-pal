@@ -485,8 +485,10 @@ function onObjectAdded({ target }) {
   enableSettingsBoxFor(target);
 }
 
-function onObjectModified() {
+function onObjectModified({ target }) {
+  console.log('modified!');
   onDocEdit();
+  matchInputsToObjectValues(target);
 }
 
 function onObjectRemoved({ target }) {
@@ -495,6 +497,7 @@ function onObjectRemoved({ target }) {
 }
 
 function onObjectMoving({ target }) {
+  console.log('moving!');
   const object = target as FabricObject;
   const gridSize = ppi / 8;
 
@@ -533,8 +536,60 @@ function onObjectMoving({ target }) {
   canvas.renderAll();
 }
 
+function moveSelectedLeft() {
+  const active = canvas.getActiveObject();
+  if (!active) {
+    return;
+  }
+  canvasHistory.addManualObjectModifiedEvent(active, {left: active.left});
+  active.set('left', active.left - 1);
+  active.setCoords();
+  canvas.requestRenderAll();
+}
+
+function moveSelectedRight() {
+  const active = canvas.getActiveObject();
+  if (!active) {
+    return;
+  }
+  canvasHistory.addManualObjectModifiedEvent(active, {left: active.left});
+  active.set('left', active.left + 1);
+  active.setCoords();
+  canvas.requestRenderAll();
+}
+
+function moveSelectedUp() {
+  const active = canvas.getActiveObject();
+  if (!active) {
+    return;
+  }
+  canvasHistory.addManualObjectModifiedEvent(active, {top: active.top});
+  active.set('top', active.top - 1);
+  active.setCoords();
+  canvas.requestRenderAll();
+}
+
+function moveSelectedDown() {
+  const active = canvas.getActiveObject();
+  if (!active) {
+    return;
+  }
+  canvasHistory.addManualObjectModifiedEvent(active, {top: active.top});
+  active.set('top', active.top + 1);
+  active.setCoords();
+  canvas.requestRenderAll();
+}
+
 document.addEventListener("keydown", function (event) {
-  if (event.key == "Shift") {
+  if (event.key == "ArrowLeft") {
+    moveSelectedLeft();
+  } else if (event.key == "ArrowRight") {
+    moveSelectedRight();
+  } else if (event.key == "ArrowUp") {
+    moveSelectedUp();
+  } else if (event.key == "ArrowDown") {
+    moveSelectedDown();
+  } else if (event.key == "Shift") {
     shiftPressed = true;
   } else if (event.key === " ") {
     spacebarPressed = true;
@@ -545,7 +600,15 @@ document.addEventListener("keydown", function (event) {
 });
 
 document.addEventListener("keyup", function (event) {
-  if (event.key == "Shift") {
+  if (event.key == "ArrowLeft") {
+    console.log("Left key");
+  } else if (event.key == "ArrowRight") {
+    console.log("Right key");
+  } else if (event.key == "ArrowUp") {
+    console.log("up key");
+  } else if (event.key == "ArrowDown") {
+    console.log("down key");
+  } else if (event.key == "Shift") {
     shiftPressed = false;
   } else if (event.key === " ") {
     spacebarPressed = false;

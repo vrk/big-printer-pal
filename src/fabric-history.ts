@@ -129,6 +129,40 @@ class FabricHistory {
     };
   }
 
+  public addManualObjectModifiedEvent(target: FabricObject, previousValues: Object) {
+    if (this.historyProcessing || target.excludeFromExport) {
+      return;
+    }
+    this.historyRedo = [];
+    const action = this.getManualObjectModifiedEvent(target, previousValues);
+    this.historyUndo.push(action);
+  }
+
+  public getManualObjectModifiedEvent(target: any, previousValues: Object): HistoryAction {
+    
+    if (!target.id && target.getObjects) {
+      // We have a selection
+      const ids = target.getObjects().map((o: any) => {
+        return o.id;
+      });
+      return {
+        type: "modifyObject",
+        objectIDs: ids,
+        previousProperties: {
+          ...previousValues
+        },
+      };
+    }
+
+    return {
+      type: "modifyObject",
+      objectID: target.id,
+      previousProperties: {
+          ...previousValues
+      },
+    };
+  }
+
   private historySaveModifyObject(target: any, transform: Transform): HistoryAction {
     if (!target.id && target.getObjects) {
       // We have a selection
