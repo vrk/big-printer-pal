@@ -18,9 +18,6 @@ const config: ForgeConfig = {
       appleIdPassword: process.env.APPLE_PASSWORD,
       teamId: process.env.TEAM_ID,
     },
-    extendInfo: {
-      LSMinimumSystemVersion: '10.15'
-    }
   },
   rebuildConfig: {},
   makers: [
