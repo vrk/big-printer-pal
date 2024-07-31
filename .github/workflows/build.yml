@@ -40,7 +40,7 @@ jobs:
           APPLE_SIGN_ID: ${{ secrets.APPLE_SIGN_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           TEAM_ID: ${{ secrets.TEAM_ID }}
-        run: npm run make -- --arch=universal
+        run: npm run make -- --arch=x64,arm64
 
   build_on_win:
     runs-on: windows-latest

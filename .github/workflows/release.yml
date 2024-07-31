@@ -45,7 +45,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           TEAM_ID: ${{ secrets.TEAM_ID }}
-        run: npm run publish -- --arch=universal
+        run: npm run publish -- --arch=x64,arm64
 
   publish_on_win:
     runs-on: windows-latest
