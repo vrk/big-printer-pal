@@ -28,8 +28,6 @@ function buildMenu(mainWindow) {
             submenu: [
               { role: "about" },
               { type: "separator" },
-              { role: "services" },
-              { type: "separator" },
               { role: "hide" },
               { role: "hideOthers" },
               { role: "unhide" },
@@ -44,7 +42,6 @@ function buildMenu(mainWindow) {
       label: "File",
       submenu: [
         {
-          // role: "halp",
           label: "Save",
           accelerator: "CommandOrControl+S",
           click: () => {
@@ -52,7 +49,6 @@ function buildMenu(mainWindow) {
           }
         },
         {
-          // role: "halp",
           label: "Load",
           accelerator: "CommandOrControl+O",
           click: () => {
@@ -93,18 +89,6 @@ function buildMenu(mainWindow) {
           },
         },
         { role: "paste" },
-        ...(isMac
-          ? [
-              { role: "pasteAndMatchStyle" },
-              { role: "delete" },
-              { role: "selectAll" },
-              { type: "separator" },
-              {
-                label: "Speech",
-                submenu: [{ role: "startSpeaking" }, { role: "stopSpeaking" }],
-              },
-            ]
-          : [{ role: "delete" }, { type: "separator" }, { role: "selectAll" }]),
       ],
     },
     // { role: 'viewMenu' }
@@ -166,7 +150,7 @@ function buildMenu(mainWindow) {
           label: "Learn More",
           click: async () => {
             const { shell } = require("electron");
-            await shell.openExternal("https://electronjs.org");
+            await shell.openExternal("https://vrk2.link/vqn3k3");
           },
         },
       ],
