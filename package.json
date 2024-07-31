@@ -28,7 +28,9 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
+    "dotenv-cli": "^7.4.2",
     "electron": "31.2.1",
+    "env-cmd": "^10.1.0",
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.29.1",
     "ts-node": "^10.9.2",
@@ -43,9 +45,7 @@
   "license": "MIT",
   "dependencies": {
     "changedpi": "^1.0.4",
-    "dotenv-cli": "^7.4.2",
     "electron-squirrel-startup": "^1.0.1",
-    "env-cmd": "^10.1.0",
     "fabric": "^6.0.2",
     "update-electron-app": "^3.0.0",
     "uuid": "^10.0.0"
