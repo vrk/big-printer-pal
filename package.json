@@ -7,7 +7,7 @@
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "make": "electron-forge make",
+    "make": "dotenv electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx ."
   },
@@ -45,6 +45,7 @@
   "license": "MIT",
   "dependencies": {
     "changedpi": "^1.0.4",
+    "electron-log": "^5.1.7",
     "electron-squirrel-startup": "^1.0.1",
     "fabric": "^6.0.2",
     "update-electron-app": "^3.0.0",
