@@ -343,7 +343,9 @@ async function handleFileDownload(_: any, dataUrl: string) {
     var buf = Buffer.from(data, "base64");
 
     fs.writeFile(filePath, buf, async () => {
-      await open(filePath);
+      const module = await import('open');
+      const myOpen = module.default;
+      myOpen(filePath);
     });
   });
 }
