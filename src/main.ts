@@ -4,6 +4,7 @@ import fs from "fs";
 import SimpleElectronStore from "./simple-store";
 import { updateElectronApp } from "update-electron-app";
 import log from 'electron-log/main';
+import open from 'open';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -341,7 +342,8 @@ async function handleFileDownload(_: any, dataUrl: string) {
     var data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
     var buf = Buffer.from(data, "base64");
 
-    fs.writeFile(filePath, buf, () => {
+    fs.writeFile(filePath, buf, async () => {
+      await open(filePath);
     });
   });
 }
