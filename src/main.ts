@@ -345,7 +345,12 @@ async function handleFileDownload(_: any, dataUrl: string) {
     fs.writeFile(filePath, buf, async () => {
       const module = await import('open');
       const myOpen = module.default;
-      myOpen(filePath);
+      const folderPath = path.dirname(filePath);
+      if (process.platform === "darwin") {
+        myOpen(filePath);
+      } else {
+        myOpen(folderPath);
+      }
     });
   });
 }
